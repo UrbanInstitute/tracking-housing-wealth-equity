@@ -11,11 +11,22 @@
   <link rel="stylesheet" type="text/css" href="css/main.css"/>
 </head>
 <body>
- 
+<div class = "dataBinder placeMain"></div>
+<div class = "dataBinder placeSecondary"></div>
+
 <div class="ui-widget">
   <label for="mainCity">city: </label>
-  <input id="mainCity">
+  <input id="placeMain">
 </div>
+
+
+<div class="ui-widget">
+  <label for="mainCity">city2: </label>
+  <input id="placeSecondary">
+  <img id = "placeClose" src = "img/placeClose.png">
+
+</div>
+
  <div class="toggleContainer">
     <span class="toggleLabel">Percentage</span>
     <div class = 'toggle off'></div>
@@ -27,7 +38,7 @@
 <div id = "chartContainer"></div>
  
  <script src="https://d3js.org/d3.v7.min.js"></script>
- <script src="js/vendor/countup.min.js"></script>
+ <!-- <script src="js/vendor/countup.min.js"></script> -->
  <script src = "js/main.js"></script>
 
 </body>

@@ -1,95 +1,234 @@
 var DEFAULT_CITY = "Atlanta city, GA"
+var DEFAULT_SECONDARY = "Chicago city, IL"
+
+var PERCENT = d3.format(".1%")
+var HOUSEHOLDS = d3.format(".3s") //max NYC white 1209318
+var TOTALWEALTH = function(val){ return d3.format('$.3s')(val).replace("G","B") } //max NYC white 549000000000.00 -> $549B
+var AVGWEALTH =  d3.format("$.3s") //max Santa Monica white, 4476061.069 -> $4.48M
+
+const CHANGE_TYPE_DURATION = 1000;
+const CHANGE_PLACE_DURATION = 300;
+
+const GROUPED_BAR_PADDING = .3;
+const GROUPED_BAR_PAIR_PADDING = 10;
+const CHART_MARGINS = {top: 0, right: 70, bottom: 0, left: 80}
+const CHART_WIDTH = 315;  
+const CHART_HEIGHT = 380;
+const MAIN_STACKED_OFFSET = -40;
+const SECONDARY_STACKED_OFFSET = -10;
+const STACKED_DOUBLE_CAT_LABEL_POS = 180;
+const STACKED_SINGLE_CAT_LABEL_POS = 90;
+const STACKED_SINGLE_DATA_LABEL_POS = -30;
+const HARD_TICK_ALIGN = {
+                          "Black" : -22,
+                          "Hispanic" : 0,
+                          "Asian" : -20,
+                          "White" : -16,
+                          "Other" : -17
+                        }
+
+const ACTIVE_BLUE = "#1696d2"
+const ACTIVE_GREEN = "#55B748"
+const DEACTIVE_BLUE = "#A2D4EC"
+const DEACTIVE_GREEN = "#BCDEB4"
+const DEFAULT_TEXT = "#353535"
+
+const CHART_TITLES = {
+  "grouped": {
+    "hhs": "Total households",
+    "hw": "Total primary residence wealth",
+    "ho_rate": "Homeownership rates",
+    "mean_hv": "Home values"
+  },
+  "stacked": {
+    "hhs": "Distribution of household population",
+    "hw": "Distribution of primary residence wealth",
+    "ho_rate": "Homeownership rates",
+    "mean_hv": "Home values"
+  }
+}
 
 function getChartType(varSuffix){
-  if(varSuffix == "ho_rate" || varSuffix == "mean_hv") return "grouped"
-  else return d3.select(".toggle").classed("on") ? "grouped" : "stacked"
+  if(varSuffix == "ho_rate" || varSuffix == "mean_hv") return "grouped";
+  else return d3.select(".toggle").classed("on") ? "grouped" : "stacked";
 }
 
 function getChartMargins(){
-  return {top: 0, right: 30, bottom: 0, left: 40}
+  return CHART_MARGINS;
 }
 function getChartWidth(){
-    var margin = getChartMargins()
-    return 240 - margin.left - margin.right
+  var margin = getChartMargins();
+
+  return CHART_WIDTH - margin.left - margin.right
 }
-function getChartHeight(chartType){
-  var margin = getChartMargins()
-  return 190 - margin.top - margin.bottom;
+function getChartHeight(varSuffix, chartType, secondaryVisible){
+  var ct = chartType ?  chartType : getChartType(varSuffix),
+      H = (secondaryVisible && ct == "grouped") ? CHART_HEIGHT : CHART_HEIGHT*.5,
+      margin = getChartMargins()
+
+  return H - margin.top - margin.bottom;
 }
 function getActiveRace(){
   return 'white'
 }
+function getPlaceMain(){
+  return d3.select(".dataBinder.placeMain").datum()
+}
+function getPlaceSecondary(){
+  return d3.select(".dataBinder.placeSecondary").datum()
+}
+function getSecondaryVisible(){
+  return d3.select("#placeClose").classed("active")
+}
+
+function formatLabel(val, varSuffix, chartType){
+  if(typeof(chartType) == "undefined") chartType = getChartType(varSuffix)
+
+  if(chartType == "stacked") return PERCENT(val)
+  if(varSuffix == "hhs") return HOUSEHOLDS(val)
+  if(varSuffix == "mean_hv") return AVGWEALTH(val)
+  if(varSuffix == "ho_rate") return PERCENT(val)
+  if(varSuffix == "hw") return TOTALWEALTH(val)
+}
+
 
 d3.csv("data/source/by_place_noCDPs_2019.csv")
   .then(function(data){
-    populateDropdowns(data)
-    var default_datum = data.filter(function(c){ return c.placenm == DEFAULT_CITY})[0]
-    buildCharts(default_datum)
+    initControls(data)
+
+    var placeMain = DEFAULT_CITY,
+        placeSecondary = "",
+        // placeSecondary = DEFAULT_SECONDARY,
+        default_datum = data.filter(function(c){ return c.placenm == placeMain})[0],
+        secondary_datum = (placeSecondary == "" || placeSecondary == placeMain) ?
+                        default_datum :
+                        data.filter(function(c){ return c.placenm == placeSecondary})[0],
+        secondaryVisible = (placeSecondary != "" && placeSecondary != placeMain)
+
+    d3.select(".dataBinder.placeMain").datum(default_datum)
+    d3.select(".dataBinder.placeSecondary").datum(secondary_datum)
+
+    d3.selectAll(".placeMain.placeLabel").text(default_datum.placenm)
+
+    init(default_datum, secondary_datum, secondaryVisible)
   })
 
 
-function populateDropdowns(data){
+function initControls(data){
   var placeNames = data.map(d => d.placenm)
+
   $( function() {
-      $( "#mainCity" ).autocomplete({
-        source: placeNames,
-        select: function( event, ui ) {
-          var placeName = ui.item.value
-          var place = data.filter(d => d.placenm == placeName)[0]
-          updatePlaces(place, false)
-        }
-      })
-      .click(function(){
-        $(this).val("")
-      })
+    $( "#placeMain" ).autocomplete({
+      source: placeNames,
+      select: function( event, ui ) {
+        var placeName = ui.item.value,
+            place = data.filter(d => d.placenm == placeName)[0]
 
-  } );
-}
-d3.select(".toggle").on("click", function(){
-  var chartType;
+        updatePlaces(place, false)
+      }
+    })
+    .click(function(){
+      $(this).val("")
+    })
+    .blur(function(){
+      $(this).val(getPlaceMain().placenm)
+    })
+  });
+
+  $( function() {
+    $( "#placeSecondary" ).autocomplete({
+      source: placeNames,
+      select: function( event, ui ) {
+        var placeName = ui.item.value,
+            place = data.filter(d => d.placenm == placeName)[0]
+      
+        d3.select("#placeClose").classed("active", true)
+
+        updatePlaces(false, place)
+      }
+    })
+    .click(function(){
+      $(this).val("")
+    })
+    .blur(function(){
+      if(getPlaceSecondary()){ $(this).val(getPlaceSecondary().placenm) }
+    })
+  });
+
+  d3.select("#placeClose")
+    .on("click", function(){
+      d3.select("#placeClose").classed("active", false)
+      $( "#placeSecondary" ).val('')
+      updatePlaces(false, false)
+    })
+
+  d3.select(".toggle").on("click", function(){
+    var chartType;
     if(d3.select(this).classed("on")){
-        d3.select(this).classed("on", false)
-        d3.select(this).classed("off", true)
-        chartType = "stacked"
-
+      d3.select(this).classed("on", false)
+      d3.select(this).classed("off", true)
+      chartType = "stacked"
     }else{
-        d3.select(this).classed("on", true)
-        d3.select(this).classed("off", false)
-        chartType = "grouped"
+      d3.select(this).classed("on", true)
+      d3.select(this).classed("off", false)
+      chartType = "grouped"
     }
     updateChartTypes(chartType)
+  })
+}
 
-})
 
 
-function buildCharts(place){
-  d3.select("#chartContainer").selectAll("svg").remove()
-  d3.select("#chartContainer").selectAll(".tmpTitle").remove()
-  $("#mainCity").val(place.placenm)
+function init(placeMain, placeSecondary, secondaryVisible){
+  $("#placeMain").val(placeMain.placenm)
 
-  buildChart("hhs", place)
-  buildChart("hw", place)
-  buildChart("ho_rate", place)
-  buildChart("mean_hv", place)
+  if(secondaryVisible){
+    $("#placeSecondary").val(placeSecondary.placenm)
+    d3.select("#placeClose").classed("active", true)
+  }else{
+    $("#placeSecondary").val('')
+    d3.select("#placeClose").classed("active", false)
+  }
 
-  updateChartType("hhs", "stacked", false)
-  updateChartType("hw", "stacked", false)
+  buildChart("hhs", placeMain, placeSecondary, secondaryVisible)
+  buildChart("hw", placeMain, placeSecondary, secondaryVisible)
+  buildChart("ho_rate", placeMain, placeSecondary, secondaryVisible)
+  buildChart("mean_hv", placeMain, placeSecondary, secondaryVisible)
 
+  updateChartType("hhs", "stacked", false, secondaryVisible)
+  updateChartType("hw", "stacked", false, secondaryVisible)
 }
 
 function updatePlaces(placeMain, placeSecondary){
+  if(placeMain){ d3.select(".dataBinder.placeMain").datum(placeMain) }
+  d3.select(".dataBinder.placeSecondary").datum(placeSecondary)
+
+  if(placeMain){ d3.selectAll(".placeMain.placeLabel").text(placeMain.placenm) }
+
   updatePlace("hhs", placeMain, placeSecondary)
   updatePlace("hw", placeMain, placeSecondary)
   updatePlace("ho_rate", placeMain, placeSecondary)
   updatePlace("mean_hv", placeMain, placeSecondary)
 }
 function updateChartTypes(chartType){
-  updateChartType("hhs", chartType, true)
-  updateChartType("hw", chartType, true)
+  updateChartType("hhs", chartType, true, getSecondaryVisible())
+  updateChartType("hw", chartType, true, getSecondaryVisible())
 }
 
-function shapeData(varSuffix, place){
+function shapeData(varSuffix, placeRaw){
   var denom;
+  var dummyPlace = {
+    "placenm" : ""
+  }
+  
+  for(vs in ["hhs", "hv", "ho_rate", "hw"]){
+    dummyPlace[vs] = 1
+    for(r in "asian_", "black_", "hispanic_","other_","white_"){
+      dummyPlace[r + vs] = 1
+    }
+  }
+  
+  var place = (placeRaw) ? placeRaw : dummyPlace;
   if(varSuffix == "hhs") denom = place["hhs"]
   else if(varSuffix == "hw") denom = place["hw"]
   else denom = 1;
@@ -99,295 +238,744 @@ function shapeData(varSuffix, place){
   else if(varSuffix == "hv") placeAvg = place["mean_hv"]
   else placeAvg = 1
 
-  return [
-    {
-      "place": place.placenm,
-      "label": "Asian",
-      "value": place["asian_" + varSuffix],
-      "percent": +place["asian_" + varSuffix]/+denom,
-      "placeAvg": placeAvg
-    },
-    {
-      "place": place.placenm,
-      "label": "Black",
-      "value": place["black_" + varSuffix],
-      "percent": +place["black_" + varSuffix]/+denom,
-      "placeAvg": placeAvg
-    },
-    {
-      "place": place.placenm,
-      "label": "Hispanic",
-      "value": place["hispanic_" + varSuffix],
-      "percent": +place["hispanic_" + varSuffix]/+denom,
-      "placeAvg": placeAvg
-    },
-    {
-      "place": place.placenm,
-      "label": "Other",
-      "value": place["other_" + varSuffix],
-      "percent": +place["other_" + varSuffix]/+denom,
-      "placeAvg": placeAvg
-    },
-    {
-      "place": place.placenm,
-      "label": "White",
-      "value": place["white_" + varSuffix],
-      "percent": +place["white_" + varSuffix]/+denom,
-      "placeAvg": placeAvg
-    }
-  ]
+  return  [
+            {
+              "place": place.placenm,
+              "label": "Asian",
+              "value": place["asian_" + varSuffix],
+              "percent": +place["asian_" + varSuffix]/+denom,
+              "placeAvg": placeAvg
+            },
+            {
+              "place": place.placenm,
+              "label": "Black",
+              "value": place["black_" + varSuffix],
+              "percent": +place["black_" + varSuffix]/+denom,
+              "placeAvg": placeAvg
+            },
+            {
+              "place": place.placenm,
+              "label": "Hispanic",
+              "value": place["hispanic_" + varSuffix],
+              "percent": +place["hispanic_" + varSuffix]/+denom,
+              "placeAvg": placeAvg
+            },
+            {
+              "place": place.placenm,
+              "label": "Other",
+              "value": place["other_" + varSuffix],
+              "percent": +place["other_" + varSuffix]/+denom,
+              "placeAvg": placeAvg
+            },
+            {
+              "place": place.placenm,
+              "label": "White",
+              "value": place["white_" + varSuffix],
+              "percent": +place["white_" + varSuffix]/+denom,
+              "placeAvg": placeAvg
+            }
+          ]
 
 }
-function buildChart(varSuffix, place){
-  var data = shapeData(varSuffix, place)
-  // set the dimensions and margins of the graph
-  var margin = getChartMargins()
-  width = getChartWidth(),
-  height = getChartHeight()
+function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
 
-  var titles = {
-    "hhs": "Households",
-    "hw": "Housing wealth",
-    "ho_rate": "Homeownership rate",
-    "mean_hv": "Mean home values"
-  }
+  var dataMain = shapeData(varSuffix, placeMain),
+      dataSecondary = shapeData(varSuffix, placeSecondary),
+      margin = getChartMargins(),
+      width = getChartWidth(),
+      height = getChartHeight(varSuffix, false, secondaryVisible)
+  //     titles = {
+  //       "hhs": "Households",
+  //       "hw": "Housing wealth",
+  //       "ho_rate": "Homeownership rate",
+  //       "mean_hv": "Mean home values"
+  //     }
 
-  d3.select("#chartContainer").append("div")
-    .attr("class", "tmpTitle")
-    .text(titles[varSuffix])
-  // append the svg object to the body of the page
-  var svg = d3.select("#chartContainer")
-  .append("svg")
-  // .data(data)
-  .attr("class", varSuffix)
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-  .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+  d3.select(".chartTitle." + varSuffix)
+    .html(CHART_TITLES["grouped"][varSuffix])
 
-  // Parse the Data
-
-  // Add X axis
+  var svg = d3.select(".chart." + varSuffix)
+    .append("svg")
+      .attr("class", varSuffix)
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+  
   var x = d3.scaleLinear()
-  .domain([0, d3.max(data, d => +d.value )])
-  .range([ 0, width]);
-  svg.append("g")
-  .attr("class","axis x")
-  .attr("transform", "translate(0," + height + ")")
-  .call(d3.axisBottom(x))
-  // .selectAll("text")
-  // .attr("transform", "translate(-10,0)rotate(-45)")
-  // .style("text-anchor", "end");
+    .domain([0, d3.max(dataMain.concat(dataSecondary), d => +d.value )])
+    .range([ 0, width]);
 
-  // Y axis
   var y = d3.scaleBand()
-  .range([ 0, height ])
-  .domain(data.map(function(d) { return d.label; }))
-  .padding(.3);
+    .range([ 0, height ])
+    .domain(dataMain.map(function(d) { return d.label; }))
+    .padding(GROUPED_BAR_PADDING);
+  
   svg.append("g")
-  .call(d3.axisLeft(y))
-
-
+    .attr("class", "axis y")
+    .call(d3.axisLeft(y))
+    .selectAll(".tick text").attr("dy", "5px")
 
   svg.selectAll(".bar.placeMain.hidden." + varSuffix)
-  .data(data)
-  .enter()
-  .append("rect")
-  .attr("class", function(d){ return "bar placeMain hidden " + varSuffix + " " + d.label.toLowerCase() })
-  .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
-  .attr("x", x(0) )
-  .attr("y", function(d) { return y(d.label); })
-  .attr("width", function(d) { return x(d.value); })
-  .attr("height", y.bandwidth() )
+    .data(dataMain)
+    .enter()
+    .append("rect")
+      .attr("class", function(d){ return "bar placeMain hidden " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", x(0) )
+      .attr("y", function(d) { return y(d.label); })
+      .attr("width", function(d) { return x(d.value); })
+      .attr("height", function(){ return (secondaryVisible) ?  y.bandwidth()/2 : y.bandwidth() })
 
-
-  //Bars
   svg.selectAll(".bar.placeMain.show." + varSuffix)
-  .data(data)
-  .enter()
-  .append("rect")
-  .attr("class", function(d){ return "bar placeMain show " + varSuffix + " " + d.label.toLowerCase() })
-  .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
-  .attr("x", x(0) )
-  .attr("y", function(d) { return y(d.label); })
-  .attr("width", function(d) { return x(d.value); })
-  .attr("height", y.bandwidth() )
-  // .attr("fill", "#1696d2")
+    .data(dataMain)
+    .enter()
+    .append("rect")
+      .attr("class", function(d){ return "bar placeMain show " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", x(0) )
+      .attr("y", function(d) { return y(d.label); })
+      .attr("width", function(d) { return x(d.value); })
+      .attr("height", function(){ return (secondaryVisible) ?  y.bandwidth()/2 : y.bandwidth() })
+
+  svg.selectAll(".barLabel.placeMain.visible." + varSuffix)
+    .data(dataMain)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeMain visible " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", function(d) { return x(d.value) + 5; })
+      .attr("y", function(d) { return (secondaryVisible) ? y(d.label) + y.bandwidth()/4 + 5 : y(d.label) + y.bandwidth()/2 + 5; })
+      .html(function(d){ return formatLabel(d.value, varSuffix) })
+      .style("fill", DEFAULT_TEXT)
+  
+
+  svg.selectAll(".barLabel.placeSecondary.visible." + varSuffix)
+    .data(dataSecondary)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeSecondary visible " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", function(d) { return x(d.value) + 5; })
+      .attr("y", function(d) { return y(d.label) + y.bandwidth() - 2; })
+      .html(function(d){ return (secondaryVisible) ? formatLabel(d.value, varSuffix) : "" })
+      .style("fill", DEFAULT_TEXT)
+
+  svg.selectAll(".barLabel.placeMain.hidden." + varSuffix)
+    .data(dataMain)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeMain hidden " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", 0)
+      .attr("y", 0)
+      .html(function(d){ return formatLabel(d.value, varSuffix) })
+  
+  svg.selectAll(".barLabel.placeSecondary.hidden." + varSuffix)
+    .data(dataSecondary)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeSecondary hidden " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", 0)
+      .attr("y", 0)
+      .html(function(d){ return formatLabel(d.percent, varSuffix) })
+
+
+  svg.selectAll(".bar.placeSecondary.hidden." + varSuffix)
+    .data(dataSecondary)
+    .enter()
+    .append("rect")
+      .attr("class", function(d){
+        var collapseClass = (d.placenm == "") ? "collapsed" : "open"
+        return "bar placeSecondary hidden " + varSuffix + " " + d.label.toLowerCase() + " " + collapseClass
+      })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", x(0) )
+      .attr("y", function(d) { return y(d.label) + y.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5 })
+      .attr("width", function(d) { return x(d.value); })
+      .attr("height", function(){ return (secondaryVisible) ?  y.bandwidth()/2 : y.bandwidth() })
+
+  svg.selectAll(".bar.placeSecondary.show." + varSuffix)
+    .data(dataSecondary)
+    .enter()
+    .append("rect")
+      .attr("class", function(d){
+        var collapseClass = (d.placenm == "") ? "collapsed" : "open"
+        return "bar placeSecondary show " + varSuffix + " " + d.label.toLowerCase() + " " + collapseClass
+      })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", x(0) )
+      .attr("y", function(d) {
+        return (secondaryVisible) ? y(d.label) + y.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5 : y(d.label);
+      })
+      .attr("width", function(d) { return x(d.value); })
+      .attr("height", function(){ return (secondaryVisible) ?  y.bandwidth()/2 : 0 })
+
 }
 function updatePlace(varSuffix, placeMain, placeSecondary){
-  var data = shapeData(varSuffix, placeMain, placeSecondary),
+
+  var dataMain = shapeData(varSuffix, placeMain),
+      dataSecondary = shapeData(varSuffix, placeSecondary),
       chartType = getChartType(varSuffix),
-      width = getChartWidth()
+      width = getChartWidth(),
+      dataActive = (placeMain) ? dataMain : dataSecondary,
+      removeSecondary = (!placeMain && !placeSecondary);
 
-  var x = d3.scaleLinear()
-  .domain([0, d3.max(data, d => +d.value )])
-  .range([ 0, width]);
-var svg = d3.select("svg." + varSuffix)
+  var svg = d3.select("svg." + varSuffix)
 
+  var selector = (placeMain) ? "placeMain" : "placeSecondary",
+      data = (placeMain) ? dataMain : dataSecondary
+      stackedOffset = (placeMain) ? MAIN_STACKED_OFFSET : SECONDARY_STACKED_OFFSET;
 
-    var height = getChartHeight("stacked")
-    var y = d3.scaleLinear()
-      .domain([0, 1 ])
-      .range([ 0, height]);
+  if(chartType == "grouped"){ 
 
+    if(removeSecondary){
+    //grouped, remove secondary
+      var height = getChartHeight(varSuffix, "stacked", placeSecondary),
+          margin = getChartMargins(),
+          width = getChartWidth(),
+          dataMain = d3.selectAll(".bar.placeMain." + varSuffix).data(),
+          x = d3.scaleLinear()
+            .domain([0, d3.max(dataMain, d => +d.value )])
+            .range([ 0, width]),
+          cat = d3.scaleBand()
+            .range([ 0, height ])
+            .domain(dataMain.map(function(d) { return d.label; }))
+            .padding(GROUPED_BAR_PADDING);
 
+      svg.selectAll(".bar.show." + selector + "." + varSuffix)
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("width", 0)
+          .attr("height", 0)
 
-  var cat = d3.scaleBand()
-  .range([ 0, height ])
-  .domain(data.map(function(d) { return d.label; }))
-  .padding(.3);
+      svg.transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("height", height + margin.top + margin.bottom)
 
+      svg.selectAll(".bar.show.placeMain." + varSuffix)
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("y", function(d) { return cat(d.label); })
+          .attr("height",  cat.bandwidth() )
+          .attr("width", function(d) { return x(d.value); })
 
+      svg.selectAll(".barLabel.visible.placeMain." + varSuffix)
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("x", function(d) { return x(d.value) + 5; })
+          .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5 })
+          .style("fill", DEFAULT_TEXT)
+      
+      svg.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+        .data(dataSecondary)
 
-if(chartType == "grouped"){
-  // console.log(data)
+      svg.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+        .data(dataSecondary)
+        .html(function(d){ return "" })
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("x", function(d) {
+            var mainDatum = svg.select(".barLabel.visible.placeMain." + d.label.toLowerCase()).datum()
+            return x(mainDatum.value) + 5;
+          })
+          .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
+          .style("fill", DEFAULT_TEXT)
 
-    svg.select(".axis.x")
-    .transition()
-    .call(d3.axisBottom(x))
+      d3.select(".chartContainer svg." + varSuffix + " .axis.y")
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .call(d3.axisLeft(cat))
 
-    svg
-      .selectAll(".bar.placeMain.show")
-      .data(data)
-      .transition()
-      .attr("width", function(d) { return x(d.value); })
-    svg
-      .selectAll(".bar.placeMain.hidden")
-      .data(data)
-      .attr("width", function(d) { return x(d.value); })
     }else{
-console.log(data)
-  d3.selectAll(".bar.hidden." + varSuffix)
-    .data(data)
-      .attr("transform",function(d,i){
-        return "translate(40," + (0) + ") rotate(90 0 " + cat(d.label) + ")"
-      })
-      .attr("width", function(d){
-        return y(d.percent)
-      })
+    //grouped, add bar
+      var height = getChartHeight(varSuffix, "grouped", placeSecondary),
+          cat = d3.scaleBand()
+            .range([ 0, height ])
+            .domain(dataActive.map(function(d) { return d.label; }))
+            .padding(GROUPED_BAR_PADDING);
+
+      var addingBar = false;
+      if(placeSecondary){
+        var dataMain = svg.selectAll(".bar.placeMain").data()
+        if(svg.selectAll(".bar." + selector + ".show").attr("height") == 0){
+        //add secondary grouped bar
+          addingBar = true;
+          var x = d3.scaleLinear()
+            .domain([0, d3.max(dataMain.concat(dataSecondary), d => +d.value )])
+            .range([ 0, width]),
+            height = getChartHeight(varSuffix, "grouped", placeSecondary),
+            margin = getChartMargins(),
+            y = d3.scaleLinear()
+              .domain([0, 1 ])
+              .range([ 0, height]);
+
+          svg.selectAll(".bar.show.placeSecondary")
+            .data(dataSecondary)
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("transform",function(d,i){ return "translate(0,0) rotate(0 0 0)" })
+              .attr("width", function(d) { return x(d.value); })
+              .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5 })
+              .attr("height", cat.bandwidth()/2 )
+
+          svg.selectAll(".bar.show.placeMain")
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("transform",function(d,i){ return "translate(0,0) rotate(0 0 0)" })
+              .attr("width", function(d) { return x(d.value); })
+              .attr("y", function(d) { return cat(d.label) })
+              .attr("height", cat.bandwidth()/2 )
+
+          svg.selectAll(".barLabel.visible.placeMain." + varSuffix)
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("x", function(d) { return x(d.value) + 5; })
+              .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/4 + 5 })
+              .style("fill", DEFAULT_TEXT)
+
+          svg.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+            .data(dataSecondary)
+            .html(function(d){ return formatLabel(d.percent, varSuffix) })
+          
+          svg.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+            .data(dataSecondary)
+            .html(function(d){ return formatLabel(d.value, varSuffix) })
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("x", function(d) { return x(d.value) + 5; })
+              .attr("y", function(d) { return cat(d.label) + cat.bandwidth() - 2; })
+              .style("fill", DEFAULT_TEXT)
+
+          svg.select(".axis.y")
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .call(d3.axisLeft(cat))
+
+          svg.transition()
+            .duration(CHANGE_PLACE_DURATION)
+            .attr("height", height + margin.top + margin.bottom)
+
+        }else{
+        //update secondary grouped bar
+        }
+      }else{
+      //update main grouped bar
+        var dataSecondary = svg.selectAll(".bar.placeSecondary").data()
+      }
+
+      if(!addingBar){
+        var x = d3.scaleLinear()
+          .domain([0, d3.max(dataMain.concat(dataSecondary), d => +d.value )])
+          .range([ 0, width]);
+        svg
+          .selectAll(".bar.show.placeMain")
+          .data(dataMain)
+          .transition()
+          .duration(CHANGE_PLACE_DURATION)
+            .attr("width", function(d) { return x(d.value); })
+
+        svg
+          .selectAll(".bar.hidden.placeMain")
+          .data(dataMain)
+          .attr("width", function(d) { return x(d.value); })
+
+        svg
+          .selectAll(".bar.show.placeSecondary")
+          .data(dataSecondary)
+          .transition()
+          .duration(CHANGE_PLACE_DURATION)
+            .attr("width", function(d) { return x(d.value); })
+
+        svg
+          .selectAll(".bar.hidden.placeSecondary")
+          .data(dataSecondary)
+          .attr("width", function(d) { return x(d.value); })
+
+        svg
+          .selectAll(".barLabel.hidden.placeMain." + varSuffix)
+          .data(dataMain)
+          .html(function(d){ return formatLabel(d.perent, varSuffix) })
+
+        svg
+          .selectAll(".barLabel.visible.placeMain." + varSuffix)
+          .data(dataMain)
+          .html(function(d){ return formatLabel(d.value, varSuffix) })
+          .transition()
+          .duration(CHANGE_PLACE_DURATION)
+            .attr("x", function(d) { return x(d.value) + 5; })
+            .style("fill", DEFAULT_TEXT)
+
+        svg
+          .selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+          .data(dataSecondary)
+          .html(function(d){ return formatLabel(d.percent, varSuffix) })
+
+        svg
+          .selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+          .data(dataSecondary)
+          .html(function(d){ return formatLabel(d.value, varSuffix) })
+          .transition()
+          .duration(CHANGE_PLACE_DURATION)
+            .attr("x", function(d) { return x(d.value) + 5; })
+            .style("fill", DEFAULT_TEXT)
+            
 
 
-              d3.selectAll(".bar.show." + varSuffix)
-              .data(data)
-                .transition()
-                // .attr("y",0)
-                // .attr("transform-origin",function(d){
-                //  return "0 " + cat(d.label)
-                // })
-                .attr("transform",function(d,i){
-                  var ypos = 0;
-                  for(var j = 0; j< i; j++){
-                    ypos += data[j]["percent"]
-                  }
-                  console.log(d)
-                  var translatedPos = +d3.select(".bar.hidden." + varSuffix + "." + d.label.toLowerCase()).attr("y")
-                  return "translate(40," + (-translatedPos+y(ypos)) + ") rotate(90 0 " + cat(d.label) + ")"
-                })
-                // .attr("y", function(d,i){
-                //           var ypos = 0;
-                //   for(var j = 0; j< i; j++){
-                //     ypos += data[j]["percent"]
-                //   }
-                //   return ypos
-                // })
-                .attr("width", function(d){
-                  // console.log(d)
-                  return y(d.percent)
-                })
-
-
-
+      }
     }
-}
-function updateChartType(varSuffix, chartType, transition){
-    var duration = (transition == true) ? 1000 : 0;
-
-
-    var height = getChartHeight("stacked")
-    var y = d3.scaleLinear()
-      .domain([0, 1 ])
-      .range([ 0, height]);
-    var data = d3.selectAll(".bar." + varSuffix).data()
-
-  var x = d3.scaleLinear()
-  .domain([0, d3.max(data, d => +d.value )])
-  .range([ 0, width]);
-
-
-  var cat = d3.scaleBand()
-  .range([ 0, height ])
-  .domain(data.map(function(d) { return d.label; }))
-  .padding(.3);
-
-if(chartType == "stacked"){
-  d3.selectAll(".bar.hidden." + varSuffix)
-      .attr("transform-origin",function(d){
-       return "0 " + cat(d.label)
-      })
-      .attr("transform",function(d,i){
-        return "translate(40," + (0) + ") rotate(90)"
-      })
-      .attr("width", function(d){
-        return y(d.percent)
-      })
-
-
-
-              d3.selectAll(".bar.show." + varSuffix)
-                .transition()
-                .duration(duration)
-                // .attr("y",0)
-                // .attr("transform-origin",function(d){
-                //  return "0 " + cat(d.label)
-                // })
-                .attr("transform",function(d,i){
-                  var ypos = 0;
-                  for(var j = 0; j< i; j++){
-                    ypos += data[j]["percent"]
-                  }
-                  var translatedPos = +d3.select(".bar.hidden." + varSuffix + "." + d.label.toLowerCase()).attr("y")
-                  return "translate(40," + (-translatedPos+y(ypos)) + ") rotate(90 0 " + cat(d.label) + ")"
-                })
-                // .attr("y", function(d,i){
-                //           var ypos = 0;
-                //   for(var j = 0; j< i; j++){
-                //     ypos += data[j]["percent"]
-                //   }
-                //   return ypos
-                // })
-                .attr("width", function(d){
-                  return y(d.percent)
-                })
 
   }else{
-
-    var data = d3.selectAll(".bar." + varSuffix).data()
+    var height = getChartHeight(varSuffix, "stacked", placeSecondary),
+        y = d3.scaleLinear()
+          .domain([0, 1 ])
+          .range([ 0, height]),
+        cat = d3.scaleBand()
+          .range([ 0, height ])
+          .domain(data.map(function(d) { return d.label; }))
+          .padding(GROUPED_BAR_PADDING);
     
+    if(removeSecondary){
+    //stacked, remove secondary
+      svg.selectAll(".bar.show." + selector + "." + varSuffix)
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+        .attr("height", 0)
 
-  var cat = d3.scaleBand()
-  .range([ 0, height ])
-  .domain(data.map(function(d) { return d.label; }))
-  .padding(.3);
+      svg.select(".axis.y")
+        .selectAll(".tick")
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("transform", function(d,i){
+            return "translate(" + STACKED_SINGLE_CAT_LABEL_POS + "," + (cat(d) + cat.bandwidth()*.5) + ")"
+          })
+
+      d3.selectAll(".barLabel.hidden.placeMain." + varSuffix)
+        .html(function(d){ return formatLabel(d.percent, varSuffix, chartType); })
+
+      d3.selectAll(".barLabel.visible.placeMain." + varSuffix)
+        .html(function(d){ return formatLabel(d.percent, varSuffix, chartType); })
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("x", function(d){
+
+            var w = d3.select(".barLabel.hidden.placeMain." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+
+            return  -78 - w + STACKED_SINGLE_CAT_LABEL_POS
+          })
+          .style("fill", DEFAULT_TEXT)
+
+      d3.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+        .html("")
+        .attr("x", function(d){
+            var w = d3.select(".barLabel.hidden.placeMain." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+
+            return  -78 - w + STACKED_SINGLE_CAT_LABEL_POS
+        })
 
 
-        d3.selectAll(".bar." + varSuffix)
-      .transition()
-      .duration(duration)
-      // .attr("y",0)
-      // .attr("transform-origin","0 0")
-      .attr("transform",function(d,i){
+    }else{
+    //stacked, add bar
 
-        return "translate(0,0) rotate(0 0 0)"
-      })
-      .attr("width", function(d){
+      svg.selectAll(".bar.hidden." + selector + "." + varSuffix)
+        .data(data)
+        .attr("transform",function(d,i){
+          return "translate(" + stackedOffset + "," + (0) + ") rotate(90 0 " + cat(d.label) + ")"
+        })
+        .attr("width", function(d){
+          return y(d.percent)
+        })
 
-        return x(d.value)
-      })
+      d3.selectAll(".bar.show." + selector + "." + varSuffix)
+        .data(data)
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("transform",function(d,i){
+            var ypos = 0;
+            for(var j = 0; j< i; j++){
+              ypos += data[j]["percent"]
+            }
+
+            var isSecondary = selector == "placeSecondary",
+                xOffset = (isSecondary) ? SECONDARY_STACKED_OFFSET : MAIN_STACKED_OFFSET,
+                yPosBar = (isSecondary) ? cat(d.label) + cat.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5: cat(d.label),
+                translatedPos = +d3.select(".bar.hidden." + varSuffix + "." + d.label.toLowerCase() + "." + selector).attr("y")
+      
+            return "translate(" + xOffset + "," + (-translatedPos+y(ypos)) + ") rotate(90 0 " + yPosBar + ")"
+          })
+          .attr("height", cat.bandwidth())
+          .attr("width", function(d){ return y(d.percent) })
+
+      d3.selectAll(".barLabel.hidden.placeMain." + varSuffix)
+        .html(function(d){
+          var label = formatLabel(d.percent, varSuffix, chartType);
+          return label + "<tspan> /<tspan>"
+        })
+
+      d3.selectAll(".barLabel.visible.placeMain." + varSuffix)
+        .html(function(d){
+          var label = formatLabel(d.percent, varSuffix, chartType);
+          return label + "<tspan> /<tspan>"
+        })
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("x", function(d){
+
+            var w = d3.select(".barLabel.hidden.placeMain." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+            var wSecondary = d3.select(".barLabel.hidden.placeSecondary." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+
+            return -78 - w - wSecondary + STACKED_DOUBLE_CAT_LABEL_POS
+          })
+          .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
+          .style("fill", function(){
+            return d3.select(this).classed("active") ? ACTIVE_BLUE : DEACTIVE_BLUE
+          })
+
+      d3.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+        .data(data)
+        .html(function(d){ return  formatLabel(d.percent, varSuffix, chartType) })
+
+      d3.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+        .data(data)
+        .html(function(d){ return  formatLabel(d.percent, varSuffix, chartType) })
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("x", function(d){
+            var w = d3.select(".barLabel.hidden.placeSecondary." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+            return -75 - w + STACKED_DOUBLE_CAT_LABEL_POS
+          })
+          .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
+          .style("fill", function(){ return d3.select(this).classed("active") ? ACTIVE_GREEN : DEACTIVE_GREEN })
+
+      svg.select(".axis.y")
+        .selectAll(".tick")
+        .transition()
+        .duration(CHANGE_PLACE_DURATION)
+          .attr("transform", function(d,i){
+            return "translate(" + STACKED_DOUBLE_CAT_LABEL_POS + "," + (cat(d) + cat.bandwidth()*.5) + ")"
+          })
+
+    }
   }
 }
 
-  // .attr("x", function(d) { return x(d.Country); })
-  // .attr("y", function(d) { return y(d.Value); })
-  // .attr("width", x.bandwidth())
-  // .attr("height", function(d) { return height - y(d.Value); })
-  // .attr("fill", "#69b3a2")
+function updateChartType(varSuffix, chartType, transition, secondaryVisible){
+  var duration = (transition == true) ? CHANGE_TYPE_DURATION : 0,
+      dataMain = d3.selectAll(".bar.show.placeMain." + varSuffix).data(),
+      dataSecondary = d3.selectAll(".bar.show.placeSecondary." + varSuffix).data(),
+      dataActive = (secondaryVisible) ? dataMain.concat(dataSecondary) : dataMain,
+      width = getChartWidth()
+      x = d3.scaleLinear()
+        .domain([0, d3.max(dataActive, d => +d.value )])
+        .range([ 0, width]),
+      margin = getChartMargins()
+
+
+  d3.select(".chartTitle." + varSuffix)
+    .html(CHART_TITLES[chartType][varSuffix])
+
+  if(chartType == "stacked"){
+  //stacked bar
+
+    var height = getChartHeight(varSuffix, "stacked", secondaryVisible),
+        y = d3.scaleLinear()
+          .domain([0, 1 ])
+          .range([ 0, height]),
+        cat = d3.scaleBand()
+          .range([ 0, height ])
+          .domain(dataMain.map(function(d) { return d.label; }))
+          .padding(GROUPED_BAR_PADDING);
+
+    d3.selectAll(".bar.hidden." + varSuffix)
+      // .attr("transform-origin",function(d){ return "0 " + cat(d.label) })
+      .attr("transform",function(d,i){
+        var xOffset = (d3.select(this).classed("placeSecondary")) ? SECONDARY_STACKED_OFFSET : MAIN_STACKED_OFFSET;
+        return "translate(" + xOffset + "," + xOffset + ") rotate(90)"
+      })
+      .attr("height", function(d){ return cat.bandwidth() })
+      .attr("width", function(d){ return y(d.percent) })
+
+    d3.selectAll(".bar.show." + varSuffix)
+      .transition()
+      .duration(duration)
+        .attr("y", function(d) {
+            var isSecondary = d3.select(this).classed("placeSecondary")
+            return (isSecondary) ? cat(d.label) + cat.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5: cat(d.label);
+        })
+        .attr("transform",function(d,i){
+          var isSecondary = d3.select(this).classed("placeSecondary"),
+              iOffset = (isSecondary) ? 5 : 0,
+              ypos = 0;
+
+          for(var j = 0; j< i - iOffset ; j++){
+            if(isSecondary){
+              ypos += dataSecondary[j]["percent"]
+            }else{
+              ypos += dataMain[j]["percent"]
+            }
+          }
+
+          var xOffset = (isSecondary) ? SECONDARY_STACKED_OFFSET : MAIN_STACKED_OFFSET,
+              placeClass = (isSecondary) ? "placeSecondary" : "placeMain",
+              yPosBar = (isSecondary) ? cat(d.label) + cat.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5: cat(d.label),
+              translatedPos = +d3.select(".bar.hidden." + varSuffix + "." + d.label.toLowerCase() + "." + placeClass).attr("y");
+          
+          return "translate(" + xOffset + "," + (-translatedPos+y(ypos)) + ") rotate(90 0 " + yPosBar + ")"
+        })
+        .attr("height", function(d){
+            var isSecondary = d3.select(this).classed("placeSecondary")
+            return (secondaryVisible || !isSecondary) ? cat.bandwidth() : 0;
+        })
+        .attr("width", function(d){ return y(d.percent) })
+
+    d3.selectAll(".barLabel.hidden.placeMain." + varSuffix)
+      .html(function(d){
+        var label = formatLabel(d.percent, varSuffix, chartType);
+        return (secondaryVisible) ? label + "<tspan> /<tspan>" : label
+      })
+
+    d3.selectAll(".barLabel.visible.placeMain." + varSuffix)
+      .html(function(d){
+        var label = formatLabel(d.percent, varSuffix, chartType);
+        return (secondaryVisible) ? label + "<tspan> /<tspan>" : label
+      })
+      .transition()
+      .duration(duration)
+        .attr("x", function(d){
+
+          var w = d3.select(".barLabel.hidden.placeMain." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+          var wSecondary = d3.select(".barLabel.hidden.placeSecondary." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+
+          return (secondaryVisible) ? -78 - w - wSecondary + STACKED_DOUBLE_CAT_LABEL_POS : -78 - w + STACKED_SINGLE_CAT_LABEL_POS
+        })
+        .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
+        .style("fill", function(){
+          if(!secondaryVisible) return DEFAULT_TEXT
+          else return d3.select(this).classed("active") ? ACTIVE_BLUE : DEACTIVE_BLUE
+        })
+
+    d3.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+      .html(function(d){ return (secondaryVisible) ? formatLabel(d.percent, varSuffix, chartType) : "" })
+
+    d3.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+      .html(function(d){ return (secondaryVisible) ? formatLabel(d.percent, varSuffix, chartType) : "" })
+      .transition()
+      .duration(duration)
+        .attr("x", function(d){
+          
+        var w = d3.select(".barLabel.hidden.placeSecondary." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
+
+          return (secondaryVisible) ? -75 - w + STACKED_DOUBLE_CAT_LABEL_POS : 5 - w + STACKED_SINGLE_CAT_LABEL_POS
+        })
+        .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
+        .style("fill", function(){ return d3.select(this).classed("active") ? ACTIVE_GREEN : DEACTIVE_GREEN })
+
+
+    d3.select(".chart svg." + varSuffix + " .axis.y")
+      .selectAll(".tick")
+      .transition()
+      .duration(duration)
+        .attr("transform", function(d,i){
+          var catLabelPos = (secondaryVisible) ? STACKED_DOUBLE_CAT_LABEL_POS : STACKED_SINGLE_CAT_LABEL_POS;
+          return "translate(" + catLabelPos + "," + (cat(d) + cat.bandwidth()*.5) + ")"
+        })
+
+    d3.selectAll(".chart svg." + varSuffix + " .axis.y .tick text")
+      .transition()
+      .duration(duration)
+        .attr("dx", function(d,i){ return HARD_TICK_ALIGN[d] })
+
+  }else{
+  ///grouped bar
+
+    var height = getChartHeight(varSuffix, "grouped", secondaryVisible),
+        y = d3.scaleLinear()
+          .domain([0, 1 ])
+          .range([ 0, height]),
+        data = d3.selectAll(".bar." + varSuffix).data(),
+        cat = d3.scaleBand()
+          .range([ 0, height ])
+          .domain(data.map(function(d) { return d.label; }))
+          .padding(GROUPED_BAR_PADDING);
+
+
+    d3.selectAll(".bar.show." + varSuffix)
+      .transition()
+      .duration(duration)
+        .attr("transform",function(d,i){ return "translate(0,0) rotate(0 0 0)" })
+        .attr("y", function(d) {
+          var isSecondary = d3.select(this).classed("placeSecondary")
+          return (isSecondary) ? cat(d.label) + cat.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5: cat(d.label);
+        })
+        .attr("width", function(d) { return x(d.value); })
+        .attr("height", function(){
+          var isSecondary = d3.select(this).classed("placeSecondary")
+          if(!secondaryVisible && isSecondary) return 0
+          else return (secondaryVisible) ? cat.bandwidth()/2 : cat.bandwidth()
+        })
+
+    d3.selectAll(".barLabel.visible.placeMain." + varSuffix)
+      .html(function(d){ return formatLabel(d.value, varSuffix, chartType) })
+      .transition()
+      .duration(duration)
+        .attr("x", function(d) { return x(d.value) + 5; })
+        .attr("y", function(d) { return (secondaryVisible) ? cat(d.label) + cat.bandwidth()/4 + 5 : cat(d.label) + cat.bandwidth()/2 + 5; })
+        .style("fill", DEFAULT_TEXT)
+
+    d3.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+      .html(function(d){ return (secondaryVisible) ? formatLabel(d.value, varSuffix, chartType) : "" })
+      .transition()
+      .duration(duration)
+        .attr("x", function(d) { return x(d.value) + 5; })
+        .attr("y", function(d) { return cat(d.label) + cat.bandwidth() - 2; })
+        .style("fill", DEFAULT_TEXT)
+
+
+    d3.select(".chart svg." + varSuffix + " .axis.y")
+      .transition()
+      .duration(duration)
+        .call(d3.axisLeft(cat))
+
+    d3.selectAll(".chart svg." + varSuffix + " .axis.y .tick text")
+      .transition()
+      .duration(duration)
+        .attr("dx",-6)
+  }
+
+  d3.select(".chart svg." + varSuffix)
+    .transition()
+    .duration(duration)
+    .attr("height", height + margin.top + margin.bottom)
+
+}
+
+
+
+
+
+
+
+function toggle_visibility(id) {
+    var e = document.getElementById(id);
+    if (e.style.display == 'inline-block')
+        e.style.display = 'none';
+    else
+        e.style.display = 'inline-block';
+}
+
+$(function () {
+    var shrinkHeader = 200;
+    $(window).scroll(function () {
+        var scroll = getCurrentScroll();
+        if (scroll >= shrinkHeader) {
+            $('#header-pinned').addClass('is-visible');
+        } else {
+            $('#header-pinned').removeClass('is-visible');
+        }
+    });
+
+    function getCurrentScroll() {
+        return window.pageYOffset || document.documentElement.scrollTop;
+    }
+});

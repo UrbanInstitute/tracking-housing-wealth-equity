@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+  <title>Spatial Equity Data Tool</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3.0, minimum-scale=1">
+
+
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <link rel="stylesheet" type="text/css" href="css/main.css"/>
+
+  <link href="https://fonts.googleapis.com/css?family=Lato:100,300,400,700,100italic,300italic,400italic,700italic,900,900italic" rel="stylesheet" type="text/css">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@urbaninstitute">
+  <meta name="twitter:creator" content="@urbaninstitute">
+  <meta name="twitter:title" content="Spatial Equity Data Tool">
+  <meta name="twitter:description" content="How can cities ensure that resources are equitably distributed to all residents?">
+  <meta name="twitter:image" content="https://apps.urban.org/features/equity-data-tool/images/social-twitter.png">
+  <meta property="og:title" content="Spatial Equity Data Tool" />
+  <meta property="og:description" content="How can cities ensure that resources are equitably distributed to all residents?" />
+  <meta property="og:image" content="https://apps.urban.org/features/equity-data-tool/images/social-og.png" />
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:url" content="http://urbn.is/equitytool">
+
+
+<script type="application/ld+json">{
+"@context": "http://schema.org",
+"@type": "NewsArticle",
+"headline": "Spatial Equity Data Tool",
+"url": "https://apps.urban.org/features/equity-data-tool",
+"thumbnailUrl": "https://apps.urban.org/features/equity-data-tool/images/social-og.png",
+"dateCreated": "2020-09-24T04:00:00.000Z",
+"articleSection": "Interactive Feature",
+"creator": ["Ajjit Narayanan","Alena Stern","Graham MacDonald","Allison Feldman","Ben Chartoff","Dave D’Orio","Fiona Blackshaw","Serena Lei"],
+"keywords": ["Neighborhoods, Cities, and Metros","Research Methods and Data Analytics"]
+}
+</script>
+</head>
+<body>
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MKBD2W"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MKBD2W');</script>
+<!-- End Google Tag Manager -->
+
+<div id = "widthBelow1200"></div>
+<div id = "widthBelow1000"></div>
+<div id = "widthBelow768"></div>
+<div id = "widthBelow500"></div>
+
+<div id = "paramsData"></div>
+<div id = "csvProperties"></div>
+<div id = "barChartImage"></div>
+
+<!-- START HEADER -->
+<div id="header-pinned" class="no-touch">
+   <a target="_blank" href="https://www.urban.org" title="Home" rel="home" class="site-logo"></a>
+<div class="title"><span class="feature-link"><a href="https://www.urban.org/features" class="title-linkback" alt="Urban Institute logo">Features</a></span>
+</div>
+<div class="share-icons">
+    <div class="shareThisP">
+        <span onclick="toggle_visibility('shareBox');">
+                <div class="shareThisB"></div>
+            </span>
+        <div class="shareThisW" id="shareBox">
+
+            <div class="addthis_toolbox addthis_default_style  "addthis:title="" addthis:url="">
+                <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A//urbn.is/equitytool" target="_blank" class="addthis_button_facebook at300b" title="Facebook" onclick="toggle_visibility('shareBox');"><span class="at4-icon aticon-facebook" style="background-color: rgb(48, 88, 145);"><span class="at_a11y">Share on facebook</span></span></a>
+
+                <a href="https://twitter.com/intent/tweet?text=Spatial%20Equity%20Data%20Tool%3A%20%0AMeasuring%20Spatial%20Disparities%20in%20Your%20City.%20(via%20%40urbaninstitute)%20http%3A%2F%2Furbn.is%2Fequitytool" target="_blank" class="addthis_button_twitter at300b" title="Tweet" onclick="toggle_visibility('shareBox');"><span class="at4-icon aticon-twitter" style="background-color: rgb(44, 168, 210);"><span class="at_a11y">Share on twitter</span></span></a>
+
+                <a href="Email: mailto:%20?Subject=New Urban Institute tool&amp;Body=Hi! I thought you'd be interested in this new tool from the Urban Institute: &ldquo;Spatial Equity Data Tool&rdquo; http://urbn.is/equitytool" target="_blank" class="addthis_button_email at300b" target="_blank" title="Email" onclick="toggle_visibility('shareBox');"><span class="at4-icon aticon-email" style="background-color: rgb(115, 138, 141);"><span class="at_a11y">Share on email</span></span></a>
+                <div class="atclear"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- END HEADER -->
+
+
+
+<div class = "dataBinder placeMain"></div>
+<div class = "dataBinder placeSecondary"></div>
+
+<!-- START MAIN CONTENT -->
+<div class="container">
+
+<!-- START LOADER HOME CARD -->
+
+
+
+
+
+
+
+
+
+ 
+
+<div class = "loaderHome">
+    <h2 class = "loaderHeader">Tracking Homeownership Wealth Gaps 
+</h2>
+    <h3 class = "loaderSubHeader">Is Housing Wealth Equitable in Your City?</h3>
+    <h4 class = "datePublished">October XX, 2021</h4>
+
+    <p>Homeownership is a vital tool for building wealth and economic security, but households of color are less likely to own homes than white households. And on average, Black, Hispanic and Other non-white homeowners excluding Asians typically own homes of lower value than white homeowners. </p>
+
+    <p>Partly due to the long history of segregation, redlining, displacement, and other discriminatory practices accumulating wealth through homeownership is harder for many families of color. And the data bear that out. </p>
+
+    <p>In 2019, the value of all primary residences in the US was an estimated $23.6 trillion. White households held a disproportionate amount of that wealth, making up two-thirds of the homeowners but holding three-quarters of the primary residence housing wealth.</p>
+    <p>This data tool and accompanying report explore cities’ aggregate housing wealth to uncover the drivers of racial and ethnic housing gaps. Search for your city below to see how housing wealth is distributed where you live.</p>
+
+<div class="ui-widget temp1">
+  <label for="mainCity">city: </label>
+  <input id="placeMain">
+</div>
+
+
+<div class="ui-widget temp2">
+  <label for="mainCity">city2: </label>
+  <input id="placeSecondary">
+  <img id = "placeClose" src = "img/placeClose.png">
+</div>
+
+
+    <h3>Is housing wealth equitable in <span class = "placeMain placeLabel"></span>?</h3>
+
+    <p>In many large cities, households of color overall own a disproportionately smaller share of the primary residence housing wealth. How does your city stack up?</p>
+
+    <div class = "chartsContainer topCharts">
+       <div class="toggleContainer">
+          <span class="toggleLabel">Show totals</span>
+          <div class = 'toggle off'></div>
+      </div>
+
+      <div class = "chartContainer hhs">
+        <div class = "chartTitle hhs"></div>
+        <div class = "chart hhs"></div>
+      </div>
+      <div class = "chartContainer hw">
+        <div class = "chartTitle hw"></div>
+        <div class = "chart hw"></div>
+      </div>
+    </div>
+
+
+    <h3>What drives housing inequity in <span class = "placeMain placeLabel"></span>?</h3>
+
+    <p>Homeownership rates and home values play a role in determining a group’s aggregate housing wealth. Nationwide, Black, Hispanic, Asian and other households of color, hold a smaller share of housing wealth because they are less likely to own a primary residence. And on average, Black, Hispanic and Other homeowners own homes of lower value.</p>
+
+    <p>See how homeownership rates and home values contribute to housing wealth in your city.</p>
+
+    <div class = "chartsContainer bottomCharts">
+            
+      <div class = "chartContainer ho_rate">
+        <div class = "chartTitle ho_rate"></div>
+        <div class = "chart ho_rate"></div>
+      </div>
+      <div class = "chartContainer mean_hv">
+        <div class = "chartTitle mean_hv"></div>
+        <div class = "chart mean_hv"></div>
+      </div>
+    </div>
+
+</div>
+<!-- END LOADER HOME CARD -->
+
+</div>
+<!-- END MAIN CONTENT -->
+
+
+    <footer>
+
+     <div class="content">
+
+
+                    <h5>ABOUT</h5>
+<!--                     <a href = "spatial_equity_faq.pdf" target = "_blank">
+                      <div class = "button clear footer readResearchButton">FAQ</div>
+                    </a>
+                    <a href = "spatial_equity_technical_appendix.pdf" target = "_blank">
+                      <div class = "button clear footer readResearchButton">TECHNICAL APPENDIX</div>
+                    </a>
+                    <a href = "https://apps.urban.org/features/how-to-create-equitable-technology-programs" target = "_blank">
+                      <div class = "button clear footer readResearchButton">READ THE RESEARCH</div>
+                    </a>
+                    <a href = "https://medium.com/@urban_institute/introducing-a-spatial-equity-data-tool-b959c40298cf" target = "_blank">
+                      <div class = "button clear footer readResearchButton">CASE STUDY</div>
+                    </a> -->
+                    <p>The measures calculated in this data tool come from the US Census Bureau’s 2019 American Community Survey. We chose to focus on cities rather than metropolitan areas because households of color are more likely to account for the majority of the population at the city level. Examining data at the city level can produce contrasting results between the racial and ethnic composition of a city’s household population and its primary residence housing wealth owners. Local decisions on housing policy can happen at the city happen more often at the city level than at the regional level. We include only incorporated cities in our analysis and exclude census-designated places because they lack a municipal government that can adopt policies that support economic growth or inclusion.</p>
+
+                    <p>This data tool uses the term Hispanic to refer to people of Latino or Hispanic origin because it is consistent with the US Census Bureau’s data collection. The authors acknowledge this may not be the preferred identifier, and we remain committed to employing inclusive language whenever possible.</p>
+                   
+                    <h5>Project credits</h5>
+                    <div class="urbanstatement">TThis feature was funded by [the Wells Fargo Foundation]. We are grateful to them and to all our funders, who make it possible for Urban to advance its mission. The views expressed are those of the authors and should not be attributed to the Urban Institute, its trustees, or its funders. Funders do not determine research findings or the insights and recommendations of our experts. More information on our funding principles is available here. Read our terms of service here. </div>
+
+                    <h3 class="job">Research</h3>
+                    Michael Neal, Caitlin Young and Jung Hyun Choi
+
+                    <h3 class="job">Design</h3>
+                    Allison Feldman
+
+                    <h3 class="job">Development</h3>
+                    Ben Chartoff
+
+                    <h3 class="job">Editing</h3>
+                    David Hinson 
+
+                    <h3 class="job">Writing</h3>
+                    David Hinson 
+
+                    <div class="credits"><a>View this project on GitHub</a></div>
+
+
+    </div>
+  </footer>
+
+ <script src="https://d3js.org/d3.v7.min.js"></script>
+ <!-- <script src="js/vendor/countup.min.js"></script> -->
+ <script src = "js/main.js"></script>
+
+<script>
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () { 
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),  m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m) 
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga'); 
+    ga('create', 'UA-57529944-1', 'auto'); 
+    ga('send', 'pageview');
+</script>
+
+<!-- START Parse.ly Include: Standard -->
+<div id="parsely-root" style="display: none">
+  <span id="parsely-cfg" data-parsely-site="urban.org"></span>
+</div>
+<script>
+    (function(s, p, d) {
+      var h=d.location.protocol, i=p+"-"+s,
+          e=d.getElementById(i), r=d.getElementById(p+"-root"),
+          u=h==="https:"?"d1z2jf7jlzjs58.cloudfront.net"
+          :"static."+p+".com";
+      if (e) return;
+      e = d.createElement(s); e.id = i; e.async = true;
+      e.src = h+"//"+u+"/p.js"; r.appendChild(e);
+    })("script", "parsely", document);
+</script>
+<!-- END Parse.ly Include: Standard -->
+
+
+</body>
+</html>
