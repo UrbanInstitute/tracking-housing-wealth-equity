@@ -44,7 +44,13 @@ body, svg{
 .axis.y path, .axis.y .tick line{
     display: none;
 }
-
+.avgLabel{
+    font-size: 12px;
+    font-weight: bold;
+    position: absolute;
+    top: 0px;
+    white-space: nowrap;
+}
 
 
 
@@ -1014,8 +1020,14 @@ ul{
     margin-right: 100px;
  }
  .chartsContainer.topCharts{
-    margin-bottom: 100px;
+    margin-bottom: 0px;
     display: inline-block;
+ }
+ .chart.hw svg, .chart.hhs svg{
+    margin-top: -21px;
+ }
+ .chart{
+    position: relative;
  }
 
  .temp1{

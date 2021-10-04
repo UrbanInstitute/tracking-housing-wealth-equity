@@ -7,13 +7,13 @@ var TOTALWEALTH = function(val){ return d3.format('$.3s')(val).replace("G","B") 
 var AVGWEALTH =  d3.format("$.3s") //max Santa Monica white, 4476061.069 -> $4.48M
 
 const CHANGE_TYPE_DURATION = 1000;
-const CHANGE_PLACE_DURATION = 300;
+const CHANGE_PLACE_DURATION = 1000;
 
 const GROUPED_BAR_PADDING = .3;
 const GROUPED_BAR_PAIR_PADDING = 10;
-const CHART_MARGINS = {top: 0, right: 70, bottom: 0, left: 80}
+const CHART_MARGINS = {top: 20, right: 70, bottom: 100, left: 80}
 const CHART_WIDTH = 315;  
-const CHART_HEIGHT = 380;
+const CHART_HEIGHT = 520;
 const MAIN_STACKED_OFFSET = -40;
 const SECONDARY_STACKED_OFFSET = -10;
 const STACKED_DOUBLE_CAT_LABEL_POS = 180;
@@ -63,10 +63,10 @@ function getChartWidth(){
 }
 function getChartHeight(varSuffix, chartType, secondaryVisible){
   var ct = chartType ?  chartType : getChartType(varSuffix),
-      H = (secondaryVisible && ct == "grouped") ? CHART_HEIGHT : CHART_HEIGHT*.5,
+      H = (secondaryVisible && ct == "grouped") ? 1 : .5,
       margin = getChartMargins()
 
-  return H - margin.top - margin.bottom;
+  return (CHART_HEIGHT - margin.top - margin.bottom)*H;
 }
 function getActiveRace(){
   return 'white'
@@ -235,7 +235,7 @@ function shapeData(varSuffix, placeRaw){
 
   var placeAvg;
   if(varSuffix == "ho_rate") placeAvg = place["ho_rate"]
-  else if(varSuffix == "hv") placeAvg = place["mean_hv"]
+  else if(varSuffix == "mean_hv") placeAvg = place["mean_hv"]
   else placeAvg = 1
 
   return  [
@@ -284,12 +284,6 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
       margin = getChartMargins(),
       width = getChartWidth(),
       height = getChartHeight(varSuffix, false, secondaryVisible)
-  //     titles = {
-  //       "hhs": "Households",
-  //       "hw": "Housing wealth",
-  //       "ho_rate": "Homeownership rate",
-  //       "mean_hv": "Mean home values"
-  //     }
 
   d3.select(".chartTitle." + varSuffix)
     .html(CHART_TITLES["grouped"][varSuffix])
@@ -338,48 +332,6 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
       .attr("width", function(d) { return x(d.value); })
       .attr("height", function(){ return (secondaryVisible) ?  y.bandwidth()/2 : y.bandwidth() })
 
-  svg.selectAll(".barLabel.placeMain.visible." + varSuffix)
-    .data(dataMain)
-    .enter()
-    .append("text")
-      .attr("class", function(d){ return "barLabel placeMain visible " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
-      .attr("x", function(d) { return x(d.value) + 5; })
-      .attr("y", function(d) { return (secondaryVisible) ? y(d.label) + y.bandwidth()/4 + 5 : y(d.label) + y.bandwidth()/2 + 5; })
-      .html(function(d){ return formatLabel(d.value, varSuffix) })
-      .style("fill", DEFAULT_TEXT)
-  
-
-  svg.selectAll(".barLabel.placeSecondary.visible." + varSuffix)
-    .data(dataSecondary)
-    .enter()
-    .append("text")
-      .attr("class", function(d){ return "barLabel placeSecondary visible " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
-      .attr("x", function(d) { return x(d.value) + 5; })
-      .attr("y", function(d) { return y(d.label) + y.bandwidth() - 2; })
-      .html(function(d){ return (secondaryVisible) ? formatLabel(d.value, varSuffix) : "" })
-      .style("fill", DEFAULT_TEXT)
-
-  svg.selectAll(".barLabel.placeMain.hidden." + varSuffix)
-    .data(dataMain)
-    .enter()
-    .append("text")
-      .attr("class", function(d){ return "barLabel placeMain hidden " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
-      .attr("x", 0)
-      .attr("y", 0)
-      .html(function(d){ return formatLabel(d.value, varSuffix) })
-  
-  svg.selectAll(".barLabel.placeSecondary.hidden." + varSuffix)
-    .data(dataSecondary)
-    .enter()
-    .append("text")
-      .attr("class", function(d){ return "barLabel placeSecondary hidden " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
-      .attr("x", 0)
-      .attr("y", 0)
-      .html(function(d){ return formatLabel(d.percent, varSuffix) })
 
 
   svg.selectAll(".bar.placeSecondary.hidden." + varSuffix)
@@ -412,6 +364,80 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
       .attr("width", function(d) { return x(d.value); })
       .attr("height", function(){ return (secondaryVisible) ?  y.bandwidth()/2 : 0 })
 
+
+  if(varSuffix == "mean_hv" || varSuffix == "ho_rate"){
+    var avgOpacity = (secondaryVisible) ? 0 : 1,
+        placeAvg = dataMain[0]["placeAvg"];
+
+    var avgLine = svg.append("g")
+      .attr("class", "avgEl avgLine " + varSuffix)
+      .attr("transform", "translate(" + x(placeAvg) + ",0)")
+   
+    avgLine.append("line")
+      .attr("y1", 0)
+      .attr("y2", y("White") + y.bandwidth() -1)
+      .style("stroke", "#000")
+      .style("opacity", avgOpacity)
+
+    avgLine.append("circle")
+      .attr("r",3.5)
+      .attr("cy", 0)
+      .attr("cx", 0)
+      .style("fill", "#000")
+      .style("opacity", avgOpacity)
+
+     var label = d3.select(".chart." + varSuffix) 
+      .append("div")
+      .attr("class", "avgEl avgLabel " + varSuffix)
+      .text("City average: " + formatLabel(placeAvg, varSuffix, "grouped") )
+      .style("left", (x(placeAvg) + margin.left + 7) + "px")
+
+  }
+
+  svg.selectAll(".barLabel.placeMain.hidden." + varSuffix)
+    .data(dataMain)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeMain hidden " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", 0)
+      .attr("y", 0)
+      .html(function(d){ return formatLabel(d.value, varSuffix) })
+  
+  svg.selectAll(".barLabel.placeSecondary.hidden." + varSuffix)
+    .data(dataSecondary)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeSecondary hidden " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", 0)
+      .attr("y", 0)
+      .html(function(d){ return formatLabel(d.percent, varSuffix) })
+
+  svg.selectAll(".barLabel.placeMain.visible." + varSuffix)
+    .data(dataMain)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeMain visible " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", function(d) { return x(d.value) + 5; })
+      .attr("y", function(d) { return (secondaryVisible) ? y(d.label) + y.bandwidth()/4 + 5 : y(d.label) + y.bandwidth()/2 + 5; })
+      .html(function(d){ return formatLabel(d.value, varSuffix) })
+      .style("fill", DEFAULT_TEXT)
+  
+
+  svg.selectAll(".barLabel.placeSecondary.visible." + varSuffix)
+    .data(dataSecondary)
+    .enter()
+    .append("text")
+      .attr("class", function(d){ return "barLabel placeSecondary visible " + varSuffix + " " + d.label.toLowerCase() })
+      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .attr("x", function(d) { return x(d.value) + 5; })
+      .attr("y", function(d) { return y(d.label) + y.bandwidth() - 2; })
+      .html(function(d){ return (secondaryVisible) ? formatLabel(d.value, varSuffix) : "" })
+      .style("fill", DEFAULT_TEXT)
+
+
 }
 function updatePlace(varSuffix, placeMain, placeSecondary){
 
@@ -419,19 +445,56 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
       dataSecondary = shapeData(varSuffix, placeSecondary),
       chartType = getChartType(varSuffix),
       width = getChartWidth(),
+      margin = getChartMargins(),
       dataActive = (placeMain) ? dataMain : dataSecondary,
       removeSecondary = (!placeMain && !placeSecondary);
 
   var svg = d3.select("svg." + varSuffix)
 
   var selector = (placeMain) ? "placeMain" : "placeSecondary",
-      data = (placeMain) ? dataMain : dataSecondary
+      data = (placeMain) ? dataMain : dataSecondary,
       stackedOffset = (placeMain) ? MAIN_STACKED_OFFSET : SECONDARY_STACKED_OFFSET;
 
-  if(chartType == "grouped"){ 
+  if(placeMain){ dataSecondary = d3.selectAll(".bar.placeSecondary." + varSuffix).data() }
+  if(placeSecondary){ dataMain = d3.selectAll(".bar.placeMain." + varSuffix).data() }
+
+  if(removeSecondary) {
+    d3.selectAll(".avgEl")
+      .transition()
+      .duration(CHANGE_PLACE_DURATION)
+      .style("opacity", 1)
+  }
+  else if(placeSecondary){
+    d3.selectAll(".avgEl")
+      .transition()
+      .duration(CHANGE_PLACE_DURATION)
+      .style("opacity", 0)
+  }
+  else if(placeMain && (varSuffix == "ho_rate" || varSuffix == "mean_hv")){
+    var placeAvg = dataMain[0]["placeAvg"];
+
+    var x = d3.scaleLinear()
+          .domain([0, d3.max(dataMain, d => +d.value )])
+          .range([ 0, width])
+
+    svg.select(".avgLine." + varSuffix)
+      .transition()
+      .duration(CHANGE_PLACE_DURATION)
+      .attr("transform", "translate(" + x(placeAvg) + ",0)")
+
+    d3.select(".avgLabel." + varSuffix)
+      .text("City average: " + formatLabel(placeAvg, varSuffix, "grouped") )
+      .transition()
+      .duration(CHANGE_PLACE_DURATION)
+        .style("left", (x(placeAvg) + margin.left + 7) + "px")
+
+  }
+
+  if(chartType == "grouped"){
 
     if(removeSecondary){
     //grouped, remove secondary
+    console.log("remove grouped 2", varSuffix)
       var height = getChartHeight(varSuffix, "stacked", placeSecondary),
           margin = getChartMargins(),
           width = getChartWidth(),
@@ -461,16 +524,17 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
           .attr("height",  cat.bandwidth() )
           .attr("width", function(d) { return x(d.value); })
 
+      svg.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+        .data(dataSecondary)
+console.log(dataMain)
       svg.selectAll(".barLabel.visible.placeMain." + varSuffix)
+        .data(dataMain)
         .transition()
         .duration(CHANGE_PLACE_DURATION)
           .attr("x", function(d) { return x(d.value) + 5; })
           .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5 })
           .style("fill", DEFAULT_TEXT)
       
-      svg.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
-        .data(dataSecondary)
-
       svg.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
         .data(dataSecondary)
         .html(function(d){ return "" })
@@ -501,6 +565,7 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
         var dataMain = svg.selectAll(".bar.placeMain").data()
         if(svg.selectAll(".bar." + selector + ".show").attr("height") == 0){
         //add secondary grouped bar
+        console.log("add grouped 2", varSuffix)
           addingBar = true;
           var x = d3.scaleLinear()
             .domain([0, d3.max(dataMain.concat(dataSecondary), d => +d.value )])
@@ -528,17 +593,18 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
               .attr("y", function(d) { return cat(d.label) })
               .attr("height", cat.bandwidth()/2 )
 
+          svg.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+            .data(dataSecondary)
+            .html(function(d){ return formatLabel(d.percent, varSuffix) })
+
           svg.selectAll(".barLabel.visible.placeMain." + varSuffix)
+            .data(dataMain)
             .transition()
             .duration(CHANGE_PLACE_DURATION)
               .attr("x", function(d) { return x(d.value) + 5; })
               .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/4 + 5 })
               .style("fill", DEFAULT_TEXT)
 
-          svg.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
-            .data(dataSecondary)
-            .html(function(d){ return formatLabel(d.percent, varSuffix) })
-          
           svg.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
             .data(dataSecondary)
             .html(function(d){ return formatLabel(d.value, varSuffix) })
@@ -558,17 +624,73 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
             .attr("height", height + margin.top + margin.bottom)
 
         }else{
-        //update secondary grouped bar
+          //update secondary grouped bar
+          var x = d3.scaleLinear()
+            .domain([0, d3.max(dataMain.concat(dataSecondary), d => +d.value )])
+            .range([ 0, width]);
+          
+          svg
+            .selectAll(".bar.show.placeMain")
+            .data(dataMain)
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("width", function(d) { return x(d.value); })
+
+          svg
+            .selectAll(".bar.hidden.placeMain")
+            .data(dataMain)
+            .attr("width", function(d) { return x(d.value); })
+
+          svg
+            .selectAll(".bar.show.placeSecondary")
+            .data(dataSecondary)
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("width", function(d) { return x(d.value); })
+
+          svg
+            .selectAll(".bar.hidden.placeSecondary")
+            .data(dataSecondary)
+            .attr("width", function(d) { return x(d.value); })
+
+          svg
+            .selectAll(".barLabel.hidden.placeMain." + varSuffix)
+            .data(dataMain)
+            .html(function(d){ return formatLabel(d.value, varSuffix) })
+
+          svg
+            .selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+            .data(dataSecondary)
+            .html(function(d){ return formatLabel(d.value, varSuffix) })
+
+          svg
+            .selectAll(".barLabel.visible.placeMain." + varSuffix)
+            .data(dataMain)
+            .html(function(d){ return formatLabel(d.value, varSuffix) })
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("x", function(d) { return x(d.value) + 5; })
+              .style("fill", DEFAULT_TEXT)
+
+          svg
+            .selectAll(".barLabel.visible.placeSecondary." + varSuffix)
+            .data(dataSecondary)
+            .html(function(d){ return formatLabel(d.value, varSuffix) })
+            .transition()
+            .duration(CHANGE_PLACE_DURATION)
+              .attr("x", function(d) { return x(d.value) + 5; })
+              .style("fill", DEFAULT_TEXT)
+          console.log("update grouped 2", varSuffix)
         }
       }else{
       //update main grouped bar
+      console.log("update grouped 1", varSuffix)
         var dataSecondary = svg.selectAll(".bar.placeSecondary").data()
-      }
-
-      if(!addingBar){
+        var dataVisible = (getSecondaryVisible() ? dataMain.concat(dataSecondary) : dataMain)
         var x = d3.scaleLinear()
-          .domain([0, d3.max(dataMain.concat(dataSecondary), d => +d.value )])
+          .domain([0, d3.max(dataVisible, d => +d.value )])
           .range([ 0, width]);
+        
         svg
           .selectAll(".bar.show.placeMain")
           .data(dataMain)
@@ -596,7 +718,12 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
         svg
           .selectAll(".barLabel.hidden.placeMain." + varSuffix)
           .data(dataMain)
-          .html(function(d){ return formatLabel(d.perent, varSuffix) })
+          .html(function(d){ return formatLabel(d.value, varSuffix) })
+
+        svg
+          .selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+          .data(dataSecondary)
+          .html(function(d){ return formatLabel(d.value, varSuffix) })
 
         svg
           .selectAll(".barLabel.visible.placeMain." + varSuffix)
@@ -608,22 +735,18 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
             .style("fill", DEFAULT_TEXT)
 
         svg
-          .selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
-          .data(dataSecondary)
-          .html(function(d){ return formatLabel(d.percent, varSuffix) })
-
-        svg
           .selectAll(".barLabel.visible.placeSecondary." + varSuffix)
           .data(dataSecondary)
-          .html(function(d){ return formatLabel(d.value, varSuffix) })
+          .html(function(d){ return getSecondaryVisible() ? formatLabel(d.value, varSuffix) : "" })
           .transition()
           .duration(CHANGE_PLACE_DURATION)
             .attr("x", function(d) { return x(d.value) + 5; })
             .style("fill", DEFAULT_TEXT)
-            
-
-
       }
+
+      // if(!addingBar){
+
+      // }
     }
 
   }else{
@@ -638,6 +761,7 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
     
     if(removeSecondary){
     //stacked, remove secondary
+    console.log("stacked remove", varSuffix)
       svg.selectAll(".bar.show." + selector + "." + varSuffix)
         .transition()
         .duration(CHANGE_PLACE_DURATION)
@@ -677,7 +801,7 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
 
     }else{
     //stacked, add bar
-
+console.log("stacked add", varSuffix, selector)
       svg.selectAll(".bar.hidden." + selector + "." + varSuffix)
         .data(data)
         .attr("transform",function(d,i){
@@ -707,16 +831,26 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
           .attr("height", cat.bandwidth())
           .attr("width", function(d){ return y(d.percent) })
 
+console.log(selector, getSecondaryVisible())
+
       d3.selectAll(".barLabel.hidden.placeMain." + varSuffix)
+        .data(dataMain)
         .html(function(d){
           var label = formatLabel(d.percent, varSuffix, chartType);
-          return label + "<tspan> /<tspan>"
+          return (getSecondaryVisible()) ? label + "<tspan> /<tspan>" : label
+        })
+      d3.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
+        .data(dataSecondary)
+        .html(function(d){
+          return  (getSecondaryVisible()) ? formatLabel(d.percent, varSuffix, chartType) : "";
         })
 
+
       d3.selectAll(".barLabel.visible.placeMain." + varSuffix)
+        .data(dataMain)
         .html(function(d){
           var label = formatLabel(d.percent, varSuffix, chartType);
-          return label + "<tspan> /<tspan>"
+          return (getSecondaryVisible()) ? label + "<tspan> /<tspan>" : label
         })
         .transition()
         .duration(CHANGE_PLACE_DURATION)
@@ -725,25 +859,24 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
             var w = d3.select(".barLabel.hidden.placeMain." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
             var wSecondary = d3.select(".barLabel.hidden.placeSecondary." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
 
-            return -78 - w - wSecondary + STACKED_DOUBLE_CAT_LABEL_POS
+            return (getSecondaryVisible()) ? -78 - w - wSecondary + STACKED_DOUBLE_CAT_LABEL_POS : -78 - w + STACKED_SINGLE_CAT_LABEL_POS
           })
           .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
           .style("fill", function(){
             return d3.select(this).classed("active") ? ACTIVE_BLUE : DEACTIVE_BLUE
           })
 
-      d3.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
-        .data(data)
-        .html(function(d){ return  formatLabel(d.percent, varSuffix, chartType) })
 
       d3.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
-        .data(data)
-        .html(function(d){ return  formatLabel(d.percent, varSuffix, chartType) })
+        .data(dataSecondary)
+        .html(function(d){
+          return  (getSecondaryVisible()) ? formatLabel(d.percent, varSuffix, chartType) : "";
+        })
         .transition()
         .duration(CHANGE_PLACE_DURATION)
           .attr("x", function(d){
             var w = d3.select(".barLabel.hidden.placeSecondary." + varSuffix + "." + d.label.toLowerCase() ).node().getComputedTextLength()
-            return -75 - w + STACKED_DOUBLE_CAT_LABEL_POS
+            return getSecondaryVisible() ? -75 - w + STACKED_DOUBLE_CAT_LABEL_POS : 5 - w + STACKED_SINGLE_CAT_LABEL_POS
           })
           .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
           .style("fill", function(){ return d3.select(this).classed("active") ? ACTIVE_GREEN : DEACTIVE_GREEN })
@@ -753,7 +886,8 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
         .transition()
         .duration(CHANGE_PLACE_DURATION)
           .attr("transform", function(d,i){
-            return "translate(" + STACKED_DOUBLE_CAT_LABEL_POS + "," + (cat(d) + cat.bandwidth()*.5) + ")"
+            var catLabelPos = (getSecondaryVisible()) ? STACKED_DOUBLE_CAT_LABEL_POS : STACKED_SINGLE_CAT_LABEL_POS;
+            return "translate(" + catLabelPos + "," + (cat(d) + cat.bandwidth()*.5) + ")"
           })
 
     }
@@ -893,13 +1027,16 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
         y = d3.scaleLinear()
           .domain([0, 1 ])
           .range([ 0, height]),
+        x = d3.scaleLinear()
+          .domain([0, d3.max(dataActive, d => +d.value )])
+          .range([ 0, width]),
         data = d3.selectAll(".bar." + varSuffix).data(),
         cat = d3.scaleBand()
           .range([ 0, height ])
           .domain(data.map(function(d) { return d.label; }))
           .padding(GROUPED_BAR_PADDING);
 
-
+// console.log(dataActive)
     d3.selectAll(".bar.show." + varSuffix)
       .transition()
       .duration(duration)
