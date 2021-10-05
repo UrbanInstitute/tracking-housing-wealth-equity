@@ -1,10 +1,13 @@
-var DEFAULT_CITY = "Atlanta city, GA"
-var DEFAULT_SECONDARY = "Chicago city, IL"
+var DEFAULT_CITY = "Atlanta, GA"
+var DEFAULT_SECONDARY = "Chicago, IL"
 
 var PERCENT = d3.format(".1%")
+var PERCENT_TEXT = function(val){ return PERCENT(val).replace("%"," percent") }
+var PERCENTAGE_POINTS = function(val){ return PERCENT(val).replace("%"," percentage points") }
 var HOUSEHOLDS = d3.format(".3s") //max NYC white 1209318
 var TOTALWEALTH = function(val){ return d3.format('$.3s')(val).replace("G","B") } //max NYC white 549000000000.00 -> $549B
 var AVGWEALTH =  d3.format("$.3s") //max Santa Monica white, 4476061.069 -> $4.48M
+var DOLLARS_LONG = d3.format("$,.0f")
 
 const CHANGE_TYPE_DURATION = 1000;
 const CHANGE_PLACE_DURATION = 1000;
@@ -12,13 +15,12 @@ const CHANGE_PLACE_DURATION = 1000;
 const GROUPED_BAR_PADDING = .3;
 const GROUPED_BAR_PAIR_PADDING = 10;
 const CHART_MARGINS = {top: 20, right: 70, bottom: 100, left: 80}
-const CHART_WIDTH = 315;  
+const CHART_WIDTH = 322;  
 const CHART_HEIGHT = 520;
-const MAIN_STACKED_OFFSET = -40;
-const SECONDARY_STACKED_OFFSET = -10;
-const STACKED_DOUBLE_CAT_LABEL_POS = 180;
-const STACKED_SINGLE_CAT_LABEL_POS = 90;
-const STACKED_SINGLE_DATA_LABEL_POS = -30;
+const MAIN_STACKED_OFFSET = -15;
+const SECONDARY_STACKED_OFFSET = 15;
+const STACKED_DOUBLE_CAT_LABEL_POS = 215;
+const STACKED_SINGLE_CAT_LABEL_POS = 115;
 const HARD_TICK_ALIGN = {
                           "Black" : -22,
                           "Hispanic" : 0,
@@ -26,6 +28,13 @@ const HARD_TICK_ALIGN = {
                           "White" : -16,
                           "Other" : -17
                         }
+const SOCIAL_RACE_NAMES = {
+  "asian": "Asian",
+  "black": "Black",
+  "hispanic": "Hispanic",
+  "other": "all other",
+  "white": "white"
+}
 
 const ACTIVE_BLUE = "#1696d2"
 const ACTIVE_GREEN = "#55B748"
@@ -36,15 +45,15 @@ const DEFAULT_TEXT = "#353535"
 const CHART_TITLES = {
   "grouped": {
     "hhs": "Total households",
-    "hw": "Total primary residence wealth",
+    "hw": "Total primary-residence wealth",
     "ho_rate": "Homeownership rates",
-    "mean_hv": "Home values"
+    "mean_hv": "Average home values"
   },
   "stacked": {
     "hhs": "Distribution of household population",
-    "hw": "Distribution of primary residence wealth",
+    "hw": "Distribution of primary-residence wealth",
     "ho_rate": "Homeownership rates",
-    "mean_hv": "Home values"
+    "mean_hv": "Average home values"
   }
 }
 
@@ -69,7 +78,7 @@ function getChartHeight(varSuffix, chartType, secondaryVisible){
   return (CHART_HEIGHT - margin.top - margin.bottom)*H;
 }
 function getActiveRace(){
-  return 'white'
+  return $("#raceMenu").val()
 }
 function getPlaceMain(){
   return d3.select(".dataBinder.placeMain").datum()
@@ -92,7 +101,7 @@ function formatLabel(val, varSuffix, chartType){
 }
 
 
-d3.csv("data/source/by_place_noCDPs_2019.csv")
+d3.csv("data/by_place-bc_edits.csv")
   .then(function(data){
     initControls(data)
 
@@ -103,14 +112,16 @@ d3.csv("data/source/by_place_noCDPs_2019.csv")
         secondary_datum = (placeSecondary == "" || placeSecondary == placeMain) ?
                         default_datum :
                         data.filter(function(c){ return c.placenm == placeSecondary})[0],
-        secondaryVisible = (placeSecondary != "" && placeSecondary != placeMain)
+        secondaryVisible = (placeSecondary != "" && placeSecondary != placeMain),
+        defaultRace = 'black',
+        defaultChartType = 'stacked'
 
     d3.select(".dataBinder.placeMain").datum(default_datum)
     d3.select(".dataBinder.placeSecondary").datum(secondary_datum)
 
     d3.selectAll(".placeMain.placeLabel").text(default_datum.placenm)
 
-    init(default_datum, secondary_datum, secondaryVisible)
+    init(default_datum, secondary_datum, secondaryVisible, defaultRace, defaultChartType)
   })
 
 
@@ -125,13 +136,23 @@ function initControls(data){
             place = data.filter(d => d.placenm == placeName)[0]
 
         updatePlaces(place, false)
+        updateRace(false, "click")
+        d3.select(".placeSearch.placeMain").attr("src", "img/placeSearch.png")
+
+        // console.log(this.getComputedTextLength())
+        d3.select(".textBinder.placeMain").text(placeName)
+        $(this).css("width", (-20 + d3.select(".textBinder.placeMain").node().getBoundingClientRect().width) + "px")
+
+
       }
     })
     .click(function(){
       $(this).val("")
+      d3.select(".placeSearch.placeMain").attr("src", "img/placeSearchActive.png")
     })
     .blur(function(){
       $(this).val(getPlaceMain().placenm)
+      d3.select(".placeSearch.placeMain").attr("src", "img/placeSearch.png")
     })
   });
 
@@ -145,21 +166,24 @@ function initControls(data){
         d3.select("#placeClose").classed("active", true)
 
         updatePlaces(false, place)
+        updateRace(false, "click")
       }
     })
     .click(function(){
-      $(this).val("")
+      $(this).val("").removeClass("defaultText")
     })
     .blur(function(){
-      if(getPlaceSecondary()){ $(this).val(getPlaceSecondary().placenm) }
+      if(getPlaceSecondary()){ $(this).val(getPlaceSecondary().placenm).removeClass("defaultText") }
+      else{ $(this).val("Search for a city").addClass("defaultText") }
     })
   });
 
   d3.select("#placeClose")
     .on("click", function(){
       d3.select("#placeClose").classed("active", false)
-      $( "#placeSecondary" ).val('')
+      $( "#placeSecondary" ).val('Search for a city').addClass("defaultText")
       updatePlaces(false, false)
+      updateRace(false, "click")
     })
 
   d3.select(".toggle").on("click", function(){
@@ -175,28 +199,93 @@ function initControls(data){
     }
     updateChartTypes(chartType)
   })
+  $("#raceMenu").selectmenu({
+    change: function(event, data){
+      updateRace(data.item.value, "click")
+    },
+    open: function(event, ui){
+      d3.selectAll(".ui-selectmenu-icon.ui-icon.ui-icon-triangle-1-s").classed("open", true)
+    },
+    close: function(event, ui){
+      d3.selectAll(".ui-selectmenu-icon.ui-icon.ui-icon-triangle-1-s").classed("open", false)
+    }
+  })
+  $(window).on("scroll", function(){
+    var pBottom = d3.select("#lastPBeforeMenu").node().getBoundingClientRect().bottom
+    var footerTop = d3.select("footer").node().getBoundingClientRect().bottom
+
+    if(pBottom <= 46){
+      d3.select("#mainMenuContainer")
+        .style("position", "fixed")
+        .style("top", "50px")
+        .style("padding-bottom","10px")
+
+      d3.select("#secondaryMenuContainer")
+        .style("position", "fixed")
+        .style("top", "50px")
+        .style("right", ((window.innerWidth - 760)*.5 - 295) + "px")
+        .style("padding-left","10px")
+
+      d3.select(".secondaryRow span.placeMain.placeLabel")
+        .style("left", "77px")
+
+      d3.select("#placeSecondary")
+        .style("left", "120px")
+
+      d3.select("#lastPBeforeMenu")
+        .style("margin-bottom", "90px")
+    }else{
+      d3.select("#mainMenuContainer")
+        .style("position", "relative")
+        .style("top", "0px")
+        .style("padding-bottom","0px")
+
+      d3.select("#secondaryMenuContainer")
+        .style("position", "relative")
+        .style("top", "-50px")
+        .style("right", "-760px")
+        .style("padding-left","0px")
+      
+      d3.select(".secondaryRow span.placeMain.placeLabel")
+        .style("left", "67px")
+
+      d3.select("#placeSecondary")
+        .style("left", "110px")
+      
+      d3.select("#lastPBeforeMenu")
+        .style("margin-bottom", "20px")
+    }
+  })
 }
 
 
 
-function init(placeMain, placeSecondary, secondaryVisible){
+function init(placeMain, placeSecondary, secondaryVisible, defaultRace, defaultChartType){
+// stripped city, village, town, borough, municipality
+// only 1 county in there, Hartsville/Trousdale County, TN
   $("#placeMain").val(placeMain.placenm)
 
+   d3.select(".textBinder.placeMain").text(placeMain.placenm)
+   $("#placeMain").css("width", (-20 + d3.select(".textBinder.placeMain").node().getBoundingClientRect().width) + "px")
+
   if(secondaryVisible){
-    $("#placeSecondary").val(placeSecondary.placenm)
+    $("#placeSecondary").val(placeSecondary.placenm).removeClass("defaultText")
     d3.select("#placeClose").classed("active", true)
   }else{
-    $("#placeSecondary").val('')
+    $("#placeSecondary").val('Search for a city').addClass("defaultText")
     d3.select("#placeClose").classed("active", false)
   }
 
-  buildChart("hhs", placeMain, placeSecondary, secondaryVisible)
-  buildChart("hw", placeMain, placeSecondary, secondaryVisible)
-  buildChart("ho_rate", placeMain, placeSecondary, secondaryVisible)
-  buildChart("mean_hv", placeMain, placeSecondary, secondaryVisible)
+  buildChart("hhs", placeMain, placeSecondary, secondaryVisible, defaultRace, defaultChartType)
+  buildChart("hw", placeMain, placeSecondary, secondaryVisible, defaultRace, defaultChartType)
+  buildChart("ho_rate", placeMain, placeSecondary, secondaryVisible, defaultRace, defaultChartType)
+  buildChart("mean_hv", placeMain, placeSecondary, secondaryVisible, defaultRace, defaultChartType)
 
-  updateChartType("hhs", "stacked", false, secondaryVisible)
-  updateChartType("hw", "stacked", false, secondaryVisible)
+  updateChartType("hhs", defaultChartType, false, secondaryVisible)
+  updateChartType("hw", defaultChartType, false, secondaryVisible)
+  if(defaultChartType == "grouped") d3.select(".toggle").classed("on", true).classed("off", false)
+
+  updateRace(defaultRace)
 }
 
 function updatePlaces(placeMain, placeSecondary){
@@ -277,7 +366,7 @@ function shapeData(varSuffix, placeRaw){
           ]
 
 }
-function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
+function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible, defaultRace, defaultChartType){
 
   var dataMain = shapeData(varSuffix, placeMain),
       dataSecondary = shapeData(varSuffix, placeSecondary),
@@ -290,7 +379,7 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
 
   var svg = d3.select(".chart." + varSuffix)
     .append("svg")
-      .attr("class", varSuffix)
+      .attr("class", varSuffix + " " + defaultChartType)
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
@@ -308,14 +397,18 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
   svg.append("g")
     .attr("class", "axis y")
     .call(d3.axisLeft(y))
-    .selectAll(".tick text").attr("dy", "5px")
+    .selectAll(".tick text")
+      .attr("dy", "5px")
+      .attr("class",function(d,i){
+        return (defaultRace == d.toLowerCase()) ? "activeRace " + d.toLowerCase() : d.toLowerCase()
+      })
 
   svg.selectAll(".bar.placeMain.hidden." + varSuffix)
     .data(dataMain)
     .enter()
     .append("rect")
       .attr("class", function(d){ return "bar placeMain hidden " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", x(0) )
       .attr("y", function(d) { return y(d.label); })
       .attr("width", function(d) { return x(d.value); })
@@ -326,13 +419,11 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
     .enter()
     .append("rect")
       .attr("class", function(d){ return "bar placeMain show " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", x(0) )
       .attr("y", function(d) { return y(d.label); })
       .attr("width", function(d) { return x(d.value); })
       .attr("height", function(){ return (secondaryVisible) ?  y.bandwidth()/2 : y.bandwidth() })
-
-
 
   svg.selectAll(".bar.placeSecondary.hidden." + varSuffix)
     .data(dataSecondary)
@@ -342,7 +433,7 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
         var collapseClass = (d.placenm == "") ? "collapsed" : "open"
         return "bar placeSecondary hidden " + varSuffix + " " + d.label.toLowerCase() + " " + collapseClass
       })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", x(0) )
       .attr("y", function(d) { return y(d.label) + y.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5 })
       .attr("width", function(d) { return x(d.value); })
@@ -356,7 +447,7 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
         var collapseClass = (d.placenm == "") ? "collapsed" : "open"
         return "bar placeSecondary show " + varSuffix + " " + d.label.toLowerCase() + " " + collapseClass
       })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", x(0) )
       .attr("y", function(d) {
         return (secondaryVisible) ? y(d.label) + y.bandwidth()/2 + GROUPED_BAR_PAIR_PADDING*.5 : y(d.label);
@@ -392,6 +483,19 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
       .text("City average: " + formatLabel(placeAvg, varSuffix, "grouped") )
       .style("left", (x(placeAvg) + margin.left + 7) + "px")
 
+  }else{
+    svg.append("text")
+      .text('100%')
+      .attr('x',-80)
+      .attr('y',12)
+      .attr("class", "stackedAxisLabel")
+      .style("opacity",0)
+    svg.append("text")
+      .text('0%')
+      .attr('x',-63)
+      .attr('y',196)
+      .attr("class", "stackedAxisLabel")
+      .style("opacity",0)
   }
 
   svg.selectAll(".barLabel.placeMain.hidden." + varSuffix)
@@ -399,7 +503,7 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
     .enter()
     .append("text")
       .attr("class", function(d){ return "barLabel placeMain hidden " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", 0)
       .attr("y", 0)
       .html(function(d){ return formatLabel(d.value, varSuffix) })
@@ -409,7 +513,7 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
     .enter()
     .append("text")
       .attr("class", function(d){ return "barLabel placeSecondary hidden " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", 0)
       .attr("y", 0)
       .html(function(d){ return formatLabel(d.percent, varSuffix) })
@@ -419,7 +523,7 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
     .enter()
     .append("text")
       .attr("class", function(d){ return "barLabel placeMain visible " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", function(d) { return x(d.value) + 5; })
       .attr("y", function(d) { return (secondaryVisible) ? y(d.label) + y.bandwidth()/4 + 5 : y(d.label) + y.bandwidth()/2 + 5; })
       .html(function(d){ return formatLabel(d.value, varSuffix) })
@@ -431,7 +535,7 @@ function buildChart(varSuffix, placeMain, placeSecondary, secondaryVisible){
     .enter()
     .append("text")
       .attr("class", function(d){ return "barLabel placeSecondary visible " + varSuffix + " " + d.label.toLowerCase() })
-      .classed("active", function(d){ return d.label.toLowerCase() == getActiveRace() })
+      .classed("activeRace", function(d){ return d.label.toLowerCase() == defaultRace })
       .attr("x", function(d) { return x(d.value) + 5; })
       .attr("y", function(d) { return y(d.label) + y.bandwidth() - 2; })
       .html(function(d){ return (secondaryVisible) ? formatLabel(d.value, varSuffix) : "" })
@@ -863,9 +967,8 @@ console.log(selector, getSecondaryVisible())
           })
           .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
           .style("fill", function(){
-            return d3.select(this).classed("active") ? ACTIVE_BLUE : DEACTIVE_BLUE
+            return d3.select(this).classed("activeRace") ? ACTIVE_BLUE : DEACTIVE_BLUE
           })
-
 
       d3.selectAll(".barLabel.visible.placeSecondary." + varSuffix)
         .data(dataSecondary)
@@ -879,7 +982,7 @@ console.log(selector, getSecondaryVisible())
             return getSecondaryVisible() ? -75 - w + STACKED_DOUBLE_CAT_LABEL_POS : 5 - w + STACKED_SINGLE_CAT_LABEL_POS
           })
           .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
-          .style("fill", function(){ return d3.select(this).classed("active") ? ACTIVE_GREEN : DEACTIVE_GREEN })
+          .style("fill", function(){ return d3.select(this).classed("activeRace") ? ACTIVE_GREEN : DEACTIVE_GREEN })
 
       svg.select(".axis.y")
         .selectAll(".tick")
@@ -895,7 +998,7 @@ console.log(selector, getSecondaryVisible())
 }
 
 function updateChartType(varSuffix, chartType, transition, secondaryVisible){
-  var duration = (transition == true) ? CHANGE_TYPE_DURATION : 0,
+  var duration = (transition) ? CHANGE_TYPE_DURATION : 0,
       dataMain = d3.selectAll(".bar.show.placeMain." + varSuffix).data(),
       dataSecondary = d3.selectAll(".bar.show.placeSecondary." + varSuffix).data(),
       dataActive = (secondaryVisible) ? dataMain.concat(dataSecondary) : dataMain,
@@ -905,12 +1008,18 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
         .range([ 0, width]),
       margin = getChartMargins()
 
+  d3.selectAll("svg." + varSuffix).classed("grouped", false).classed("stacked", false).classed(chartType, true)
 
   d3.select(".chartTitle." + varSuffix)
     .html(CHART_TITLES[chartType][varSuffix])
 
   if(chartType == "stacked"){
   //stacked bar
+
+    d3.selectAll(".stackedAxisLabel")
+      .transition()
+      .duration(duration)
+      .style("opacity",1)
 
     var height = getChartHeight(varSuffix, "stacked", secondaryVisible),
         y = d3.scaleLinear()
@@ -986,7 +1095,7 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
         .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
         .style("fill", function(){
           if(!secondaryVisible) return DEFAULT_TEXT
-          else return d3.select(this).classed("active") ? ACTIVE_BLUE : DEACTIVE_BLUE
+          else return d3.select(this).classed("activeRace") ? ACTIVE_BLUE : DEACTIVE_BLUE
         })
 
     d3.selectAll(".barLabel.hidden.placeSecondary." + varSuffix)
@@ -1003,7 +1112,7 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
           return (secondaryVisible) ? -75 - w + STACKED_DOUBLE_CAT_LABEL_POS : 5 - w + STACKED_SINGLE_CAT_LABEL_POS
         })
         .attr("y", function(d) { return cat(d.label) + cat.bandwidth()/2 + 5; })
-        .style("fill", function(){ return d3.select(this).classed("active") ? ACTIVE_GREEN : DEACTIVE_GREEN })
+        .style("fill", function(){ return d3.select(this).classed("activeRace") ? ACTIVE_GREEN : DEACTIVE_GREEN })
 
 
     d3.select(".chart svg." + varSuffix + " .axis.y")
@@ -1022,6 +1131,12 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
 
   }else{
   ///grouped bar
+
+    d3.selectAll(".stackedAxisLabel")
+      .transition()
+      .duration(duration)
+      .style("opacity",0)
+
 
     var height = getChartHeight(varSuffix, "grouped", secondaryVisible),
         y = d3.scaleLinear()
@@ -1088,8 +1203,90 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
 }
 
 
+function updateRace(race, eventType){
+  // if(!dataMain) dataMain = 
+  if(!race) race = getActiveRace()
+  else($("#raceMenu").val(race).selectmenu("refresh"))
+
+  d3.select(".textBinder.race").text($("#raceMenu option:selected").text())
+
+  d3.select("#raceMenu-button").style("width", function(){ return (10 + d3.select(".textBinder.race").node().getBoundingClientRect().width) + "px" })
+  
+  d3.selectAll(".activeRace").classed("activeRace",false)
+  d3.selectAll(".bar." + race).classed("activeRace", true)
+  d3.selectAll(".barLabel")
+    .style("fill", function(){
+    if(getSecondaryVisible()){
+      return (d3.select(this).classed("placeMain")) ? DEACTIVE_BLUE : DEACTIVE_GREEN
+    }else{
+      return DEFAULT_TEXT
+    }
+  })
+  d3.selectAll(".barLabel." + race)
+    .classed("activeRace", true)
+    .style("fill", function(){
+      if(getSecondaryVisible()){
+        return (d3.select(this).classed("placeMain")) ? ACTIVE_BLUE : ACTIVE_GREEN
+      }else{
+        return DEFAULT_TEXT
+      }
+    })
+  d3.selectAll(".tick text." + race).classed("activeRace", true)
+  // console.log(d3.selectAll(".bar.placeMain.hhs").data())
+
+  buildTooltips();
+}
+
+function buildTooltips(){
+  var race = getActiveRace()
+  var placeMain = getPlaceMain()
+  var placeSecondary = getPlaceSecondary()
+  var isSecondaryVisible = getSecondaryVisible()
+  // var hhsMain = 
+
+  var topText;
+  var conjunctionJunctionMain = (Math.abs(+placeMain[race + "_" + "hhs"]/+placeMain["hhs"] -  +placeMain[race + "_" + "hw"]/+placeMain["hw"] <= .005)) ? "and" : "but"
+
+  if(isSecondaryVisible){
+    var conjunctionJunctionSecondary = (Math.abs(+placeSecondary[race + "_" + "hhs"]/+placeSecondary["hhs"] -  +placeSecondary[race + "_" + "hw"]/+placeSecondary["hw"] <= .005)) ? "and" : "but"
+
+    topText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households represent " + PERCENT_TEXT(+placeMain[race + "_" + "hhs"]/+placeMain["hhs"]) + " of those living in the city " + conjunctionJunctionMain + " they own " + PERCENT_TEXT(+placeMain[race + "_" + "hw"]/+placeMain["hw"]) + " of the housing wealth. And in " + placeSecondary.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households are " + PERCENT_TEXT(+placeSecondary[race + "_" + "hhs"]/+placeSecondary["hhs"]) + " of all households " + conjunctionJunctionSecondary + " they own " + PERCENT_TEXT(+placeSecondary[race + "_" + "hw"]/+placeSecondary["hw"]) + " of the housing wealth."
+
+  }else{
+    topText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households make up " + PERCENT_TEXT(+placeMain[race + "_" + "hhs"]/+placeMain["hhs"]) + " of the city&rsquo;s total households " + conjunctionJunctionMain + " own " + PERCENT_TEXT(+placeMain[race + "_" + "hw"]/+placeMain["hw"]) + " of the housing wealth."
+  }
+
+  d3.select("#ttTopText").html(topText)
 
 
+  var hoText;
+  if(isSecondaryVisible){
+    hoText =   "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeMain[race + "_ho_rate"]) + ", and in " + placeSecondary.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeSecondary[race + "_ho_rate"]) + "."
+  }else{
+    var diff = Math.abs(+placeMain[race + "_ho_rate"] - +placeMain["ho_rate"])
+    var diffText = (placeMain[race + "_ho_rate"] - placeMain["ho_rate"] < 0) ? "lower" : "higher"
+
+    hoText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeMain[race + "_ho_rate"]) + ", which is " + PERCENTAGE_POINTS(diff) + " " + diffText + " than the city average."
+  }
+
+  d3.select("#ttHoText").html(hoText)
+
+  var hvText;
+
+  if(isSecondaryVisible){
+    hvText =   "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeMain[race + "_mean_hv"]) + ", and in " + placeSecondary.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeSecondary[race + "_mean_hv"]) + "."
+  }else{
+    var diff = Math.abs(+placeMain[race + "_mean_hv"] - +placeMain["mean_hv"])
+    var diffText = (+placeMain[race + "_mean_hv"] - +placeMain["mean_hv"] < 0) ? "lower" : "higher"
+
+    hvText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeMain[race + "_mean_hv"]) + ", which is " + DOLLARS_LONG(diff) + " " + diffText + " than the city average."
+  }
+
+  d3.select("#ttHvText").html(hvText);
+
+
+
+}
 
 
 
