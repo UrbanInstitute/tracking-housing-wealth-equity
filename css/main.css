@@ -2,14 +2,17 @@ body, svg{
     font-family: Lato;
     color: #353535;
 }
-.textBinder, .dataBinder{
+.textBinder, .dataBinder, .widthTester{
     position: fixed;
     top: 0px;
     left: 0px;
     z-index: -1;
     opacity: 0;
 }
-.textBinder.placeMain{
+.widthTester{
+    display: none;
+}
+.textBinder.placeMain, .textBinder.placeSecondary{
     padding-left: 25px;
     font-size: 24px;
 }
@@ -27,37 +30,29 @@ body, svg{
 .barLabel.hidden{
     opacity: 0;
 }
-.barLabel.activeRace{
+.barLabel.activeRace, .barLabel.hover, .barLabel.hover.hoverChart, .barLabel.hover.hoverChart.activeRace{
     font-weight: bold;
 }
-/*svg.stacked .barLabel.placeMain{
-    fill: #A2D4EC !important;
+.barLabel, .barLabel.hoverChart, .barLabel.hoverChart.activeRace{
+    font-weight: normal;
 }
-svg.stacked .barLabel.placeMain.activeRace{
-    fill: #1696d2 !important;
-}
-svg.stacked .barLabel.placeSecondary{
-    fill: #BCDEB4 !important;
-}
-svg.stacked .barLabel.placeSecondary.activeRace{
-    fill: #55B748 !important;
-}*/
-.bar.placeMain{
+
+.bar.placeMain, .bar.placeMain.hoverChart, .bar.placeMain.hoverChart.activeRace{
     fill: #A2D4EC;
     stroke: #fff;
 }
-.bar.placeMain.activeRace{
+.bar.placeMain.activeRace, .bar.placeMain.hover, .bar.placeMain.hover.hoverChart{
     fill: #1696d2;
 
 }
 .bar.hidden, .bar.collapsed{
     opacity: 0;
 }
-.bar.placeSecondary{
+.bar.placeSecondary, .bar.placeSecondary.hoverChart, .bar.placeSecondary.hoverChart.activeRace{
     fill: #BCDEB4;
     stroke: #fff;
 }
-.bar.placeSecondary.activeRace{
+.bar.placeSecondary.activeRace, .bar.placeSecondary.hover, .bar.placeSecondary.hover.hoverChart{
     fill: #55B748;
 
 }
@@ -65,9 +60,13 @@ svg.stacked .barLabel.placeSecondary.activeRace{
     font-family: 'Lato';
     font-size: 16px;
 }
-.tick text.activeRace{
+.tick text, .tick text.hoverChart, .tick text.hoverChart.activeRace{
+    font-weight: normal;
+}
+.tick text.activeRace, .tick text.hover, .tick text.hover.hoverChart, .tick text.hover.activeRace.hoverChart{
     font-weight: bold;
 }
+
 .axis.y path, .axis.y .tick line{
     display: none;
 }
@@ -91,15 +90,23 @@ svg.stacked .barLabel.placeSecondary.activeRace{
     width: 20px;
     height: 20px;
     cursor: pointer;
-    top: 3px;
-    left: 107px;
-    position: relative;
-    opacity: .5;
+    top: 7px;
+    right: 0px;
+    position: absolute;
     cursor: default;
+    background: white;
+    background-image: url('../img/placeSearch.png');
+    background-size: cover;
 }
 #placeClose.active{
     opacity: 1;
     cursor: pointer;
+    background-image: url('../img/placeClose.png');
+}
+#placeClose.searching{
+    opacity: 1;
+    cursor: pointer;
+    background-image: url('../img/placeSecondarySearchActive.png');
 }
 
 
@@ -123,6 +130,7 @@ svg.stacked .barLabel.placeSecondary.activeRace{
     margin-left: 8px;
     position: relative;
     top: 5px;
+    display: inline-block;
 }
 .fbShare{   
     background-image: url('../img/fb.png');
@@ -144,17 +152,26 @@ svg.stacked .barLabel.placeSecondary.activeRace{
 .twitterShare:hover{   
     background-image: url('../img/twitterActive.png')
 }
-.linkedinShare{   
-    background-image: url('../img/linkedin.png');
+.emailShare{   
+    background-image: url('../img/email.png');
     background-size: 26px;
     width: 26px;
     height: 26px;
     cursor: pointer;
 }
-.linkedinShare:hover{   
-    background-image: url('../img/linkedinActive.png')
+.emailShare:hover{   
+    background-image: url('../img/emailActive.png')
 }
-
+.shareIcon.head{
+    background-size: 32px;
+    width: 32px;
+    height: 32px;
+    top: -3px;
+    margin-left: 10px;
+}
+.shareIcon.head.emailShare{
+    margin-right: 15px;
+}
 
 
 
@@ -762,7 +779,7 @@ body{
     width: 100%;
     background: #fff;
     border-bottom: 2px solid #eee;
-    z-index: 5;
+    z-index: 7;
     -webkit-transition: top 0.25s linear;
     -moz-transition: top 0.25s linear;
     -o-transition: top 0.25s linear;
@@ -935,8 +952,8 @@ display: inline-block;
     background-position: 0 -1577px;
 }
 
-#header-pinned .share-icons .at15t_linkedin.at16t_linkedin,
-#header-pinned .share-icons .addthis_button_linkedin {
+#header-pinned .share-icons .at15t_email.at16t_email,
+#header-pinned .share-icons .addthis_button_email {
     display: block;
     background-repeat: no-repeat;
     background-image: url(https://www.urban.org/sites/all/themes/urban/images/generated/icons-s8fe141aaaa.png);
@@ -945,8 +962,8 @@ display: inline-block;
     width: 32px;
 }
 
-#header-pinned .share-icons .at15t_linkedin.at16t_linkedin,
-#header-pinned .share-icons .addthis_button_linkedin:hover {
+#header-pinned .share-icons .at15t_email.at16t_email,
+#header-pinned .share-icons .addthis_button_email:hover {
     background-position: 0 -1379px;
 }
 
@@ -1094,19 +1111,25 @@ ul{
 
 
  /*Layout*/
-
+#lastPBeforeMenu{
+    margin-bottom: 70px;
+}
+#lastH3BeforeMenu{
+    margin-top: 48px;
+}
  .chartTitle{
     border-bottom: 1px solid #D2D2D2;
     font-size: 18px;
     width: 100%;
     margin-bottom: 20px;
     padding-bottom: 8px;
+    font-weight: bold;
  }
  .chartsContainer{
     display: inline-block;
  }
  .chartContainer{
-    width: 322px;
+    width: 330px;
     display: inline-block;
     float: left;
  }
@@ -1116,6 +1139,9 @@ ul{
  .chartsContainer.topCharts{
     margin-bottom: 0px;
     display: inline-block;
+ }
+ .chart svg{
+    cursor: pointer;
  }
  .chart.hw svg, .chart.hhs svg{
     margin-top: -21px;
@@ -1130,7 +1156,7 @@ ul{
     padding: 40px 35px;
     background: #f5f5f5;
     margin-top: -75px;
-    margin-bottom: 69px;
+    margin-bottom: 109px;
     width: calc(100% - 80px);
 }
 .shareTtContainer.hvShare, .shareTtContainer.hoShare{
@@ -1143,10 +1169,15 @@ ul{
 
 
 #mainMenuContainer{
-    font-size: 24px;
+    font-size: 30px;
     background: #fff;
     z-index: 6;
     width: 760px;
+    font-weight: lighter;
+    text-transform: uppercase;
+    overflow: initial;
+    white-space: nowrap;
+    position: relative;
 }
  .placeMain.placeMenu{
     display: inline-block;
@@ -1158,32 +1189,37 @@ ul{
  }
  input#placeMain{
     font-family: 'Lato';
+    font-size: 24px;
     border: none;
-    color: #000;
-    border-bottom: 2px solid #000;
-    max-width: 320px;
-    padding-left: 25px;
+    color: #353535;
+    border-bottom: 3px solid #1696d2;
+    /* max-width: 310px; */
+    padding-left: 0px;
     padding-bottom: 6px;
+    padding-right: 45px;
     text-overflow: ellipsis;
  }
  .placeSearch.placeMain{
     width: 20px;
     position: absolute;
     top: 7px;
+    right: 0px;
+    background: white;
  }
  #raceMenu-button{
     font-family: 'Lato';
     font-size: 24px;
-    font-weight: 500;
-    color: #1696d2;
+    font-weight: normal;
+    color: #353535;
     width: 240px;
     padding-left: 3px;
     margin-right: 4px;
     background: none;
     border: none;
-    border-bottom: 2px solid #000;
+    border-bottom: 3px solid #353535;
     padding-bottom: 6px;
-    padding-top: 3px;
+    padding-top: 4px;
+    text-transform: initial;
 }
 .ui-selectmenu-text{
     margin-right: 0px;
@@ -1209,13 +1245,21 @@ ul{
     font-family: Lato;
     font-size: 16px;
 }
+.ui-menu-item.disabled{
+    pointer-events: none;
+    color: #9d9d9d;
+    font-style: italic;
+}
  #secondaryMenuContainer{
     position: relative;
-    top: -50px;
+    top: -40px;
     right: -760px;
     width: 295px;
     background: white;
     font-size: 16px;
+    display: -ms-grid;
+    display: grid;
+    margin-bottom: -80px;
  }
  #secondaryHeader{
     font-size: 18px;
@@ -1224,6 +1268,9 @@ ul{
  .secondaryRow{
     display: block;
     clear: both;
+    margin-top: 13px;
+    display: table;
+    position: relative;
  }
  .secondaryRow span{
     display: inline-block;
@@ -1242,16 +1289,13 @@ ul{
     height: 29px;
 }
 #placeSecondary{
+    width: 160px;
     font-family: 'Lato';
-    font-size: 16px;
+    font-size: 24px;
     border: none;
-    border-bottom: 2px solid black;
+    border-bottom: 3px solid #55B748;
     padding-bottom: 4px;
-    text-indent: 47px;
-    position: absolute;
-    left: 110px;
-    background: none;
-    top: 69px;
+    padding-right: 45px;
 }
 
 .key{
@@ -1277,22 +1321,11 @@ ul{
 .secondaryText{
     margin-right: 10px;
 }
-input#placeSecondary{
-    width: 177px;
-    font-family: 'Lato';
-    font-size: 16px;
-    border: none;
-    border-bottom: 2px solid black;
-    padding-bottom: 6px;
-    text-indent: 47px;
-    position: absolute;
-    left: 110px;
-    background: none;
-    top: 69px;
-}
+
 input#placeSecondary.defaultText{
     font-style: italic;
     color: #9d9d9d;
+    width: 160px !important;
 }
 
 
@@ -1303,3 +1336,139 @@ input#placeSecondary.defaultText{
 
 
 
+
+
+
+/* mobile stuff */
+@media(max-width: 900px){
+    .widthTester.w900{
+        display: block;
+    }
+    .loaderHome, .chartsContainer{
+        width: 500px;
+    }
+    #mainMenuContainer{
+        width: 500px;
+        font-size: 20px;
+        font-weight: normal;
+        text-transform: initial;
+    }
+    #raceMenu-button, input#placeMain, .textBinder.placeMain, .textBinder.placeSecondary, #placeSecondary{
+        font-size: 20px;
+        font-weight: bold;
+    }
+    .chartContainer{
+        width: 500px;
+    }
+    .shareTtContainer.hvShare, .shareTtContainer.hoShare{
+        width: calc(100% - 70px);
+        padding: 40px 35px;
+        background: #f5f5f5;
+        margin-top: -85px;
+        margin-bottom: 50px;
+    }
+    footer .content {
+        width: 100%;
+        max-width: 500px;
+        padding: 0px;
+    }
+    #breakerMobile{
+        display: block;
+    }
+    .secondaryRow{
+        margin-top: 2px;
+    }
+    h2.loaderHeader{
+        line-height: 1.2em;
+    }
+}
+@media(max-width: 600px){
+    .widthTester.w600{
+        display: block;
+    }
+    .loaderHome{
+        width: calc(100% - 46px);
+    }
+    .chartsContainer{
+        width: 100%;
+    }
+    #mainMenuContainer{
+        width: 100%;
+        font-size: 20px;
+        font-weight: normal;
+        text-transform: initial;
+        background: #ffffff;
+        margin-left: -23px;
+        padding-left: 23px;
+        padding-right: 23px;
+    }
+    .menuBgEl{
+        background-color: #ffffff;
+    }
+    input#placeSecondary, input#placeSecondary:focus{
+        /*max-width: 140px;*/
+        text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+/*    #raceMenu-button, input#placeMain, .textBinder.placeMain, .textBinder.placeSecondary, #placeSecondary{
+        font-size: 20px;
+        font-weight: bold;
+    }*/
+    .chartContainer{
+        width: 100%;
+    }
+    .shareTtContainer.hvShare, .shareTtContainer.hoShare{
+/*        width: 100%;
+        padding: 40px 35px;
+        background: #f5f5f5;
+        margin-top: -85px;
+        margin-bottom: 50px;*/
+    }
+    footer .content {
+        width: 100%;
+        max-width: 500px;
+        padding: 0px;
+    }
+    .loaderHome{
+        font-size: 18px;
+    }
+    .ui-widget.ui-widget-content {
+        left: 0px !important;
+    /* display: block !important; */
+        width: 100% !important;
+    }
+    input#placeSecondary.defaultText {
+        width: 140px !important;
+    }
+    .shareTtContainer.topShare, .shareTtContainer.hvShare, .shareTtContainer.hoShare{
+        padding: 20px;
+        background: #f5f5f5;
+        width: calc(100% - 40px);
+        font-size: 18px;
+        font-weight: normal;
+    }
+    .shareTtContainer.topShare {
+        margin-top: -95px;
+        margin-bottom: 109px;
+    }
+    .chartContainer.hw{
+        margin-top: -70px;
+    }
+    .shareTtContainer.topShare{
+        margin-bottom: 75px;
+    }
+    h3.loaderSubHeader{
+        font-size: 24px;
+        line-height: 1.2em;
+    }
+    h2.loaderHeader{
+        font-size: 28px;
+    }
+    footer{
+        width: calc(100% - 46px);
+        padding-left: 23px;
+        padding-right: 23px;
+    }
+
+}
