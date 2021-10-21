@@ -36,10 +36,10 @@ const SOCIAL_RACE_NAMES = {
   "white": "white"
 }
 
-const ACTIVE_BLUE = "#0A4C6A"
-const ACTIVE_GREEN = "#2C5C2D"
-const DEACTIVE_BLUE = "#1696d2"
-const DEACTIVE_GREEN = "#55B748"
+const ACTIVE_BLUE = "#12719e"
+const ACTIVE_GREEN = "#408941"
+const DEACTIVE_BLUE = "#12719e"
+const DEACTIVE_GREEN = "#408941"
 const DEFAULT_TEXT = "#353535"
 
 const CHART_TITLES = {
@@ -55,6 +55,17 @@ const CHART_TITLES = {
     "ho_rate": "Homeownership rates",
     "mean_hv": "Average home values"
   }
+}
+
+
+const STATE_NAMES = {
+  "AL": "Alabama", "AK": "Alaska", "AS": "American Samoa", "AZ": "Arizona", "AR": "Arkansas", "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", "DC": "District of Columbia", "FM": "Federated States of Micronesia", "FL": "Florida", "GA": "Georgia", "GU": "Guam", "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MH": "Marshall Islands", "MD": "Maryland", "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi", "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York", "NC": "North Carolina", "ND": "North Dakota", "MP": "Northern Mariana Islands", "OH": "Ohio", "OK": "Oklahoma", "OR": "Oregon", "PW": "Palau", "PA": "Pennsylvania", "PR": "Puerto Rico", "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont", "VI": "Virgin Islands", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming"
+}
+function placeFormat(place, includeState){
+  var abbr = place.split(",")[1].trim(),
+      pl = place.split(",")[0].trim()
+      state = (includeState) ? ", " + STATE_NAMES[abbr] : ""
+  return pl + state
 }
 
 function widthUnder(w){
@@ -181,7 +192,19 @@ d3.csv("data/by_place-bc_edits.csv")
     if(secondaryVisible) d3.select(".dataBinder.placeSecondary").datum(secondary_datum)
     else d3.select(".dataBinder.placeSecondary").datum(false)
 
-    d3.selectAll(".placeMain.placeLabel").text(default_datum.placenm)
+    d3.selectAll(".placeMain.placeLabel").text(placeFormat(default_datum.placenm, true))
+    d3.selectAll(".placeMain.placeLabelShort").text(" " + placeFormat(default_datum.placenm, false))
+    if(secondaryVisible){
+      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeMain.placeLabelFiller").style("display", "none")
+      d3.selectAll(".placeSecondary.placeLabel").text(" " + placeFormat(secondary_datum.placenm, true))
+      d3.selectAll(".placeSecondary.placeLabelShort").text(" " + placeFormat(secondary_datum.placenm, false))
+    }else{
+      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "none")
+      d3.selectAll(".placeMain.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeSecondary.placeLabel").text("")
+      d3.selectAll(".placeSecondary.placeLabelShort").text("")
+    }
 
     init(default_datum, secondary_datum, secondaryVisible, defaultRace, defaultChartType)
   })
@@ -329,17 +352,6 @@ function initControls(data){
           .style("background", "#f5f5f5")
       }
 
-      // d3.select("#secondaryMenuContainer")
-      //   .style("position", "fixed")
-      //   .style("top", "64px")
-      //   .style("right", ((window.innerWidth - 760)*.5 - 295) + "px")
-      //   .style("padding-left","10px")
-
-      // d3.select(".secondaryRow span.placeMain.placeLabel")
-      //   .style("left", "77px")
-
-      // d3.select("#placeSecondary")
-      //   .style("left", "120px")
 
       d3.select("#lastPBeforeMenu")
         .style("margin-bottom", "90px")
@@ -360,18 +372,6 @@ function initControls(data){
         d3.selectAll(".menuBgEl")
           .style("background", "#ffffff")
       }
-
-      // d3.select("#secondaryMenuContainer")
-      //   .style("position", "relative")
-      //   .style("top", "-40px")
-      //   .style("right", "-760px")
-      //   .style("padding-left","0px")
-      
-      // d3.select(".secondaryRow span.placeMain.placeLabel")
-      //   .style("left", "67px")
-
-      // d3.select("#placeSecondary")
-      //   .style("left", "110px")
       
       d3.select("#lastPBeforeMenu")
         .style("margin-bottom", "70px")
@@ -437,7 +437,25 @@ function init(placeMain, placeSecondary, secondaryVisible, defaultRace, defaultC
 
 function updatePlaces(placeMain, placeSecondary){
   if(placeMain){ d3.select(".dataBinder.placeMain").datum(placeMain) }
-  if(placeMain){ d3.selectAll(".placeMain.placeLabel").text(placeMain.placenm) }
+  if(placeMain){
+    d3.selectAll(".placeMain.placeLabel").text(placeMain.placenm)
+    d3.selectAll(".placeMain.placeLabelShort").text(" " + placeFormat(placeMain.placenm, false))
+  }
+
+    // d3.selectAll(".placeMain.placeLabel").text(placeFormat(default_datum.placenm, true))
+    if(placeSecondary){
+      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeMain.placeLabelFiller").style("display", "none")
+      d3.selectAll(".placeSecondary.placeLabel").text(" " + placeFormat(placeSecondary.placenm, true))
+      d3.selectAll(".placeSecondary.placeLabelShort").text(" " + placeFormat(placeSecondary.placenm, false))
+    }
+    else if(!getSecondaryVisible()){
+      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "none")
+      d3.selectAll(".placeMain.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeSecondary.placeLabel").text("")
+      d3.selectAll(".placeSecondary.placeLabelShort").text("")
+    }
+
 
   updatePlace("hhs", placeMain, placeSecondary)
   updatePlace("hw", placeMain, placeSecondary)
@@ -705,12 +723,14 @@ var colors = ["#fff","#fff","#fff","#fff","#fff"]
       .attr("transform", "translate(" + x(placeAvg) + ",0)")
    
     avgLine.append("line")
+      .attr("class", "avgEl")
       .attr("y1", 0)
-      .attr("y2", y("White") + y.bandwidth() -1)
+      .attr("y2", 187.67924528301887)
       .style("stroke", "#000")
       .style("opacity", avgOpacity)
 
     avgLine.append("circle")
+      .attr("class", "avgEl")
       .attr("r",3.5)
       .attr("cy", 0)
       .attr("cx", 0)
@@ -722,6 +742,7 @@ var colors = ["#fff","#fff","#fff","#fff","#fff"]
       .attr("class", "avgEl avgLabel " + varSuffix)
       .text("City average: " + formatLabel(placeAvg, varSuffix, "grouped") )
       .style("left", (x(placeAvg) + margin.left + 7) + "px")
+      .style("opacity", avgOpacity)
 
   }else{
     svg.append("text")
@@ -978,7 +999,7 @@ function updatePlace(varSuffix, placeMain, placeSecondary){
           svg.transition()
             .duration(CHANGE_PLACE_DURATION)
             .attr("height", height + margin.top + margin.bottom)
-            .attr("height", height)
+            
 
           svg.selectAll(".bgRect")
             .transition()
@@ -1539,10 +1560,10 @@ function buildTooltips(){
   if(isSecondaryVisible){
     var conjunctionJunctionSecondary = (Math.abs(+placeSecondary[race + "_" + "hhs"]/+placeSecondary["hhs"] -  +placeSecondary[race + "_" + "hw"]/+placeSecondary["hw"]) <= .005) ? "and" : "but"
 
-    topText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households represent " + PERCENT_TEXT(+placeMain[race + "_" + "hhs"]/+placeMain["hhs"]) + " of those living in the city " + conjunctionJunctionMain + " they own " + PERCENT_TEXT(+placeMain[race + "_" + "hw"]/+placeMain["hw"]) + " of the housing wealth. And in " + placeSecondary.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households are " + PERCENT_TEXT(+placeSecondary[race + "_" + "hhs"]/+placeSecondary["hhs"]) + " of all households " + conjunctionJunctionSecondary + " they own " + PERCENT_TEXT(+placeSecondary[race + "_" + "hw"]/+placeSecondary["hw"]) + " of the housing wealth."
+    topText = "In <span class = 'placeMainTT'>" + placeMain.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households represent " + PERCENT_TEXT(+placeMain[race + "_" + "hhs"]/+placeMain["hhs"]) + " of those living in the city " + conjunctionJunctionMain + " they own " + PERCENT_TEXT(+placeMain[race + "_" + "hw"]/+placeMain["hw"]) + " of the housing wealth. And in <span class = 'placeSecondaryTT'>" + placeSecondary.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households are " + PERCENT_TEXT(+placeSecondary[race + "_" + "hhs"]/+placeSecondary["hhs"]) + " of all households " + conjunctionJunctionSecondary + " they own " + PERCENT_TEXT(+placeSecondary[race + "_" + "hw"]/+placeSecondary["hw"]) + " of the housing wealth."
 
   }else{
-    topText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households make up " + PERCENT_TEXT(+placeMain[race + "_" + "hhs"]/+placeMain["hhs"]) + " of the city&rsquo;s total households " + conjunctionJunctionMain + " own " + PERCENT_TEXT(+placeMain[race + "_" + "hw"]/+placeMain["hw"]) + " of the housing wealth."
+    topText = "In <span class = 'placeMainTT'>" + placeMain.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households make up " + PERCENT_TEXT(+placeMain[race + "_" + "hhs"]/+placeMain["hhs"]) + " of the city&rsquo;s total households " + conjunctionJunctionMain + " own " + PERCENT_TEXT(+placeMain[race + "_" + "hw"]/+placeMain["hw"]) + " of the housing wealth."
   }
 
   d3.select("#ttTopText").html(topText)
@@ -1550,12 +1571,12 @@ function buildTooltips(){
 
   var hoText;
   if(isSecondaryVisible){
-    hoText =   "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeMain[race + "_ho_rate"]) + ", and in " + placeSecondary.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeSecondary[race + "_ho_rate"]) + "."
+    hoText =   "In <span class = 'placeMainTT'>" + placeMain.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeMain[race + "_ho_rate"]) + ", and in <span class = 'placeSecondaryTT'>" + placeSecondary.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeSecondary[race + "_ho_rate"]) + "."
   }else{
     var diff = Math.abs(+placeMain[race + "_ho_rate"] - +placeMain["ho_rate"])
     var diffText = (placeMain[race + "_ho_rate"] - placeMain["ho_rate"] < 0) ? "lower" : "higher"
 
-    hoText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeMain[race + "_ho_rate"]) + ", which is " + PERCENTAGE_POINTS(diff) + " " + diffText + " than the city average."
+    hoText = "In <span class = 'placeMainTT'>" + placeMain.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households have a homeownership rate of " + PERCENT_TEXT(placeMain[race + "_ho_rate"]) + ", which is " + PERCENTAGE_POINTS(diff) + " " + diffText + " than the city average."
   }
 
   d3.select("#ttHoText").html(hoText)
@@ -1563,12 +1584,12 @@ function buildTooltips(){
   var hvText;
 
   if(isSecondaryVisible){
-    hvText =   "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeMain[race + "_mean_hv"]) + ", and in " + placeSecondary.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeSecondary[race + "_mean_hv"]) + "."
+    hvText =   "In <span class = 'placeMainTT'>" + placeMain.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeMain[race + "_mean_hv"]) + ", and in <span class = 'placeSecondaryTT'>" + placeSecondary.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeSecondary[race + "_mean_hv"]) + "."
   }else{
     var diff = Math.abs(+placeMain[race + "_mean_hv"] - +placeMain["mean_hv"])
     var diffText = (+placeMain[race + "_mean_hv"] - +placeMain["mean_hv"] < 0) ? "lower" : "higher"
 
-    hvText = "In " + placeMain.placenm + ", " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeMain[race + "_mean_hv"]) + ", which is " + DOLLARS_LONG(diff) + " " + diffText + " than the city average."
+    hvText = "In <span class = 'placeMainTT'>" + placeMain.placenm + "</span>, " + SOCIAL_RACE_NAMES[race] + " households have an average home value of " + DOLLARS_LONG(placeMain[race + "_mean_hv"]) + ", which is " + DOLLARS_LONG(diff) + " " + diffText + " than the city average."
   }
 
   d3.select("#ttHvText").html(hvText);

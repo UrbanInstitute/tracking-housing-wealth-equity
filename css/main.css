@@ -456,7 +456,7 @@ select{
 
 footer {
     position: relative;
-    margin-top: 100px;
+    margin-top: -46px;
     background-color: #f1f2f2;
     padding-bottom: 25px;
     bottom: 0;
@@ -645,7 +645,7 @@ form{
 h2.loaderHeader{
     font-size: 40px;
     margin-top: 192px;
-    margin-bottom: 25px;
+    margin-bottom: 32px;
     text-align: center;
 }
 h3.loaderSubHeader{
@@ -655,14 +655,17 @@ h3.loaderSubHeader{
     margin-top: -10px;
 }
 h4.datePublished{
-    font-size: 18px;
+    font-size: 14px;
     font-weight: normal;
-    font-style: italic;
+    font-style: normal;
     margin: 0;
     padding: 0;
     margin-top: -20px;
     margin: 0 auto;
     text-align: center;
+    color: #696969;
+    border-bottom: 1px solid #d2d2d2;
+    padding-bottom: 20px;
 }
 .loaderHeader span.weak{
     font-weight: normal;
@@ -744,7 +747,7 @@ h4.datePublished{
 
 .loaderHome{
     margin: 0 auto;
-    width: 760px;
+    width: 770px;
     font-size: 20px;
     line-height: 162.5%;
 /*    line-height: 146%;
@@ -1125,9 +1128,16 @@ ul{
     padding-bottom: 8px;
     font-weight: bold;
  }
+ .chartTitle.ho_rate, .chartTitle.mean_hv{
+    margin-bottom: -3px;
+ }
  .chartsContainer{
     display: inline-block;
+    
  }
+ .chartsContainer.mean_hv{
+    margin-top: -76px;
+}
  .chartContainer{
     width: 330px;
     display: inline-block;
@@ -1155,9 +1165,9 @@ ul{
 .shareTtContainer.topShare{
     padding: 40px 35px;
     background: #f5f5f5;
-    margin-top: -75px;
-    margin-bottom: 109px;
-    width: calc(100% - 80px);
+    margin-top: -68px;
+    margin-bottom: 60px;
+    width: calc(100% - 70px);
 }
 .shareTtContainer.hvShare, .shareTtContainer.hoShare{
     float: left;
@@ -1172,7 +1182,7 @@ ul{
     font-size: 30px;
     background: #fff;
     z-index: 6;
-    width: 760px;
+    width: 770px;
     font-weight: lighter;
     text-transform: uppercase;
     overflow: initial;
@@ -1221,6 +1231,9 @@ ul{
     padding-top: 4px;
     text-transform: initial;
 }
+#raceMenu-button, input{
+    border-radius: 0px;
+}
 .ui-selectmenu-text{
     margin-right: 0px;
     text-overflow: unset;
@@ -1253,7 +1266,7 @@ ul{
  #secondaryMenuContainer{
     position: relative;
     top: -40px;
-    right: -760px;
+    right: -770px;
     width: 295px;
     background: white;
     font-size: 16px;
@@ -1287,6 +1300,18 @@ ul{
     position: absolute;
     left: 67px;
     height: 29px;
+}
+.placeSecondary.placeLabelFiller{
+    display: none;
+}
+.placeMain.placeLabelFiller{
+    display: inline-block;
+}
+.placeMainTT{
+    border-bottom: 3px solid #1696d2;
+}
+.placeSecondaryTT{
+    border-bottom: 3px solid #55B748;
 }
 #placeSecondary{
     width: 160px;
@@ -1392,6 +1417,9 @@ input#placeSecondary.defaultText{
     .chartsContainer{
         width: 100%;
     }
+    .chartsContainer.mean_hv {
+        margin-top: -28px;
+    }
     #mainMenuContainer{
         width: 100%;
         font-size: 20px;
@@ -1449,26 +1477,28 @@ input#placeSecondary.defaultText{
         font-weight: normal;
     }
     .shareTtContainer.topShare {
-        margin-top: -95px;
+        margin-top: -88px;
         margin-bottom: 109px;
     }
     .chartContainer.hw{
         margin-top: -70px;
     }
     .shareTtContainer.topShare{
-        margin-bottom: 75px;
+        margin-bottom: 40px;
     }
     h3.loaderSubHeader{
         font-size: 24px;
         line-height: 1.2em;
     }
     h2.loaderHeader{
-        font-size: 28px;
+    font-size: 36px;
+    margin-top: 81px;
     }
     footer{
         width: calc(100% - 46px);
         padding-left: 23px;
         padding-right: 23px;
+        margin-top: -10px;
     }
 
 }
