@@ -465,7 +465,12 @@ footer {
     z-index: 997;
 
 }
-
+#readmoreList{
+    padding-inline-start: 16px;
+}
+#readmoreHeading{
+    margin-top: 30px;
+}
 
 
 footer .content{
@@ -1183,7 +1188,7 @@ ul{
     background: #fff;
     z-index: 6;
     width: 770px;
-    font-weight: lighter;
+    font-weight: 300;
     text-transform: uppercase;
     overflow: initial;
     white-space: nowrap;
@@ -1309,9 +1314,11 @@ ul{
 }
 .placeMainTT{
     border-bottom: 3px solid #1696d2;
+    padding-bottom: 2px;
 }
 .placeSecondaryTT{
     border-bottom: 3px solid #55B748;
+    padding-bottom: 2px;
 }
 #placeSecondary{
     width: 160px;
@@ -1408,6 +1415,9 @@ input#placeSecondary.defaultText{
     }
 }
 @media(max-width: 600px){
+    #firstP{
+        margin-top: 36px;
+    }
     .widthTester.w600{
         display: block;
     }
