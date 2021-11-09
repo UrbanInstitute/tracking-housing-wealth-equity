@@ -386,7 +386,7 @@ function initControls(data){
       var blurb;
       if(this.classList.contains("top")) blurb = d3.select("#ttTopText").text()
       else if(this.classList.contains("ho")) blurb = d3.select("#ttHoText").text()
-      else if(this.classList.contains("hw")) blurb = d3.select("#ttHvText")
+      else if(this.classList.contains("hv")) blurb = d3.select("#ttHvText").text()
       else blurb = ""
 
       var url = buildShareURL();
