@@ -272,7 +272,6 @@ function initControls(data){
         var w; 
         if(widthUnder(600)) w = Math.min(pad + d3.select(".textBinder.placeSecondary").node().getBoundingClientRect().width, 140)
         else w = pad + d3.select(".textBinder.placeSecondary").node().getBoundingClientRect().width
-          console.log(w)
         $(this).css("width", w + "px")
 
       }
@@ -394,7 +393,6 @@ function initControls(data){
       if(this.classList.contains("twitterShare")) shareURL = getTwitterShare(url, blurb)
       else if(this.classList.contains("fbShare")) shareURL = getFacebookShare(url)
       else shareURL = getEmailShare(url, blurb)
-        console.log(getEmailShare(url, blurb))
 
       window.open(shareURL, '_blank').focus();
       if(this.classList.contains('head')) toggle_visibility('shareBox')
@@ -530,13 +528,10 @@ function shapeData(varSuffix, placeRaw){
 
 }
 function updateSvgMouseover(varSuffix){
-  // console.log(y.step(), margin.top)
   var svg = d3.select("svg." + varSuffix)
   // var dataMain = svg.selectAll(".bar").data()
-  // console.log(dataMain)
   // var eachBand = y.step();
   svg.on("mouseover", function(event){
-    // console.log(event)
     var secondaryVisible = getSecondaryVisible()
     var chartType = getChartType()
     var height = getChartHeight(false, chartType, secondaryVisible)
@@ -552,7 +547,6 @@ function updateSvgMouseover(varSuffix){
     var index = Math.round(((d3.pointer(event)[1] -margin.top ) / eachBand));
     
     var val = y.domain()[index ];
-    console.log(val, index, d3.pointer(event)[1])
     
     if(typeof(val) == "undefined"){
       updateRace(false, "dehover")
@@ -579,7 +573,6 @@ function updateSvgMouseover(varSuffix){
     var index = Math.round(((d3.pointer(event)[1] -eachBand ) / eachBand));
     
     var val = y.domain()[index];
-    console.log(val, index, d3.pointer(event)[1])
     
     if(typeof(val) == "undefined"){
       updateRace(false, "dehover")
@@ -1489,7 +1482,6 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
 
 
 function updateRace(race, eventType){
-  console.log(eventType)
 
   if(!race) race = getActiveRace()
   else($("#raceMenu").val(race).selectmenu("refresh"))
@@ -1528,7 +1520,7 @@ function updateRace(race, eventType){
   d3.selectAll(".bar." + race).classed(raceClass, true)
   d3.selectAll(".barLabel")
     .style("fill", function(){
-    if(getSecondaryVisible()){
+    if(getSecondaryVisible() && getChartType() == "stacked"){
       return (d3.select(this).classed("placeMain")) ? DEACTIVE_BLUE : DEACTIVE_GREEN
     }else{
       return DEFAULT_TEXT
@@ -1537,8 +1529,8 @@ function updateRace(race, eventType){
   d3.selectAll(".barLabel." + race)
     .classed(raceClass, true)
     .style("fill", function(){
-      if(getSecondaryVisible()){
-        return (d3.select(this).classed("placeMain")) ? ACTIVE_BLUE : ACTIVE_GREEN
+      if(getSecondaryVisible() && getChartType() == "stacked"){
+        return (d3.select(this).classed("placeMain") && getChartType() == "stacked") ? ACTIVE_BLUE : ACTIVE_GREEN
       }else{
         return DEFAULT_TEXT
       }
