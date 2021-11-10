@@ -195,13 +195,13 @@ d3.csv("data/by_place-bc_edits.csv")
     d3.selectAll(".placeMain.placeLabel").text(placeFormat(default_datum.placenm, true))
     d3.selectAll(".placeMain.placeLabelShort").text(" " + placeFormat(default_datum.placenm, false))
     if(secondaryVisible){
-      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "contents")
       d3.selectAll(".placeMain.placeLabelFiller").style("display", "none")
       d3.selectAll(".placeSecondary.placeLabel").text(" " + placeFormat(secondary_datum.placenm, true))
       d3.selectAll(".placeSecondary.placeLabelShort").text(" " + placeFormat(secondary_datum.placenm, false))
     }else{
       d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "none")
-      d3.selectAll(".placeMain.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeMain.placeLabelFiller").style("display", "contents")
       d3.selectAll(".placeSecondary.placeLabel").text("")
       d3.selectAll(".placeSecondary.placeLabelShort").text("")
     }
@@ -442,14 +442,14 @@ function updatePlaces(placeMain, placeSecondary){
 
     // d3.selectAll(".placeMain.placeLabel").text(placeFormat(default_datum.placenm, true))
     if(placeSecondary){
-      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "contents")
       d3.selectAll(".placeMain.placeLabelFiller").style("display", "none")
       d3.selectAll(".placeSecondary.placeLabel").text(" " + placeFormat(placeSecondary.placenm, true))
       d3.selectAll(".placeSecondary.placeLabelShort").text(" " + placeFormat(placeSecondary.placenm, false))
     }
     else if(!getSecondaryVisible()){
       d3.selectAll(".placeSecondary.placeLabelFiller").style("display", "none")
-      d3.selectAll(".placeMain.placeLabelFiller").style("display", "inline-block")
+      d3.selectAll(".placeMain.placeLabelFiller").style("display", "contents")
       d3.selectAll(".placeSecondary.placeLabel").text("")
       d3.selectAll(".placeSecondary.placeLabelShort").text("")
     }
