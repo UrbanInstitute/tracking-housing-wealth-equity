@@ -432,7 +432,7 @@ function init(placeMain, placeSecondary, secondaryVisible, defaultRace, defaultC
   updateChartType("hw", defaultChartType, false, secondaryVisible)
   if(defaultChartType == "grouped") d3.select(".toggle").classed("on", true).classed("off", false)
 
-  updateRace(defaultRace)
+  updateRace(defaultRace, "click")
 }
 
 function updatePlaces(placeMain, placeSecondary){
@@ -1489,6 +1489,7 @@ function updateChartType(varSuffix, chartType, transition, secondaryVisible){
 
 
 function updateRace(race, eventType){
+  console.log(eventType)
 
   if(!race) race = getActiveRace()
   else($("#raceMenu").val(race).selectmenu("refresh"))
