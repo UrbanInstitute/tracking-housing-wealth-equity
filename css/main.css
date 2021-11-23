@@ -132,34 +132,34 @@ body, svg{
     top: 5px;
     display: inline-block;
 }
-.fbShare{   
+.fbShare{
     background-image: url('../img/fb.png');
     background-size: 26px;
     width: 26px;
     height: 26px;
     cursor: pointer;
 }
-.fbShare:hover{   
+.fbShare:hover{
     background-image: url('../img/fbActive.png')
 }
-.twitterShare{   
+.twitterShare{
     background-image: url('../img/twitter.png');
     background-size: 26px;
     width: 26px;
     height: 26px;
     cursor: pointer;
 }
-.twitterShare:hover{   
+.twitterShare:hover{
     background-image: url('../img/twitterActive.png')
 }
-.emailShare{   
+.emailShare{
     background-image: url('../img/email.png');
     background-size: 26px;
     width: 26px;
     height: 26px;
     cursor: pointer;
 }
-.emailShare:hover{   
+.emailShare:hover{
     background-image: url('../img/emailActive.png')
 }
 .shareIcon.head{
@@ -336,6 +336,12 @@ a{
 a:hover{
     text-decoration: underline;
 }
+p.correction {
+  font-style: italic;
+  margin: 30px 0px 70px 0px;
+  border-bottom: 1px solid #d2d2d2;
+  padding-bottom: 20px;
+}
 select{
     display: none;
 }
@@ -361,7 +367,7 @@ select{
 .button.footer:hover{
     color: #fff;
     border: 1px solid #12719E;
-    background: #12719E;  
+    background: #12719E;
 }
 .button.white{
     color: #1696d2;
@@ -370,7 +376,7 @@ select{
 }
 .button.white:hover{
     border: 2px solid #12719E;
-    color: #12719E;  
+    color: #12719E;
 }
 .button.blue{
     color: #fff;
@@ -669,8 +675,6 @@ h4.datePublished{
     margin: 0 auto;
     text-align: center;
     color: #696969;
-    border-bottom: 1px solid #d2d2d2;
-    padding-bottom: 20px;
 }
 .loaderHeader span.weak{
     font-weight: normal;
@@ -812,7 +816,7 @@ body{
 }
 
 #header-pinned  .subnav a {
-    color: #1696d2;    
+    color: #1696d2;
 }
 
 #header-pinned .subnav a:hover{
@@ -824,7 +828,7 @@ body{
     display: block;
     width: 34px;
     height: 34px;
-    position: absolute; 
+    position: absolute;
     left: 10px;
     margin-top: 7px;
     background: url(https://www.urban.org/sites/all/themes/urban/images/logo-mini-dark.png) no-repeat;
@@ -856,7 +860,7 @@ body{
 
 
 .subnav a {
-   color:#1696d2;    
+   color:#1696d2;
 }*/
 #header-pinned .share-icons {
     background-color: transparent;
@@ -1048,7 +1052,7 @@ display: inline-block;
     height: 35px;
     background: rgba(255,255,255, .9);
     border-bottom: solid 1px #ccc;
-  
+
 }
 
 ul{
@@ -1071,12 +1075,12 @@ ul{
    color:#333;
    display: block;
    padding:10px;
-    
+
 }
 
 #subhead .active {
-  border-bottom: solid 3px #1696d2; 
-    color:#1696d2; 
+  border-bottom: solid 3px #1696d2;
+    color:#1696d2;
     padding-bottom: 8px;
 }
 
@@ -1084,7 +1088,7 @@ ul{
   background-color:rgba(22,150,210, .8);
   color:#fff;
 
-    
+
 }
 
 
@@ -1100,7 +1104,7 @@ ul{
 
 /*end css for header*/
 
- 
+
 
 
 
@@ -1138,7 +1142,7 @@ ul{
  }
  .chartsContainer{
     display: inline-block;
-    
+
  }
  .chartsContainer.mean_hv{
     margin-top: -76px;
@@ -1165,7 +1169,7 @@ ul{
     position: relative;
  }
  .shareTtContainer{
-    float: left;    
+    float: left;
 }
 .shareTtContainer.topShare{
     padding: 40px 35px;
