@@ -341,6 +341,10 @@ p.correction {
   margin: 30px 0px 70px 0px;
   border-bottom: 1px solid #d2d2d2;
   padding-bottom: 20px;
+  font-size: 16px;
+  color: #696969;
+  text-align: center;
+  line-height: 150%;
 }
 select{
     display: none;
@@ -666,7 +670,7 @@ h3.loaderSubHeader{
     margin-top: -10px;
 }
 h4.datePublished{
-    font-size: 14px;
+    font-size: 16px;
     font-weight: normal;
     font-style: normal;
     margin: 0;
